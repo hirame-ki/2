@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>수업 공장 🏭 — 문제변형기</title>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Gothic:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --bg:#f0fdf8;--bg2:#e6f6f1;--surface:#fff;--surface2:#f5fcf9;
+  --border:#b2e0d4;--border2:#cdeee5;
+  --mint:#2dd4bf;--mint-d:#0d9488;--mint-l:#ccfbef;--mint-ll:#f0fdf8;
+  --amber:#f59e0b;--rose:#e06b8b;--blue:#3b82f6;--purple:#8b5cf6;
+  --text:#1a3a30;--sub:#3d6b5c;--muted:#7aaa97;
+  --shadow:0 2px 12px rgba(43,191,154,.10);
+  --hh:58px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Nanum Gothic',sans-serif;background:var(--bg);color:var(--text)}
+body{display:flex;flex-direction:column;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* HEADER */
+.hdr{height:var(--hh);min-height:var(--hh);flex-shrink:0;background:var(--surface);
+  border-bottom:1.5px solid var(--border);display:flex;align-items:center;
+  padding:0 16px;gap:10px;box-shadow:var(--shadow);z-index:200;position:sticky;top:0}
+.logo-box{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--mint),#4dd9b8);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo-txt{font-size:14px;font-weight:900;flex-shrink:0}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:700;flex-shrink:0;
+  background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:2px 9px}
+.tagline{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.hdr-acts{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.icon-btn{width:32px;height:32px;border-radius:8px;background:var(--bg2);border:1.5px solid var(--border);
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s;text-decoration:none}
+.icon-btn:hover{border-color:var(--mint);color:var(--mint)}
+.back-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;
+  background:var(--bg2);border:1.5px solid var(--border);color:var(--sub);
+  font-size:12px;font-weight:800;text-decoration:none;transition:all .18s;white-space:nowrap;flex-shrink:0}
+.back-btn:hover{border-color:var(--mint);color:var(--mint-d);transform:translateY(-1px)}
+.api-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
+  background:var(--bg2);border:1.5px solid var(--border);font-size:11.5px;font-weight:700;color:var(--muted)}
+.api-dot{width:7px;height:7px;border-radius:50%;background:#2dd4bf;flex-shrink:0}
+.api-dot.off{background:var(--rose)}
+
+/* GUIDE BAR */
+.guide-bar{flex-shrink:0;background:linear-gradient(90deg,var(--mint-d),var(--mint));padding:0 16px;
+  display:flex;align-items:center;justify-content:center;gap:0;overflow-x:auto;height:38px}
+.guide-bar::-webkit-scrollbar{height:0}
+.gb-item{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.9);font-size:11.5px;font-weight:700;
+  white-space:nowrap;padding:0 12px;border-right:1px solid rgba(255,255,255,.2);flex-shrink:0}
+.gb-item:first-child{padding-left:4px}
+.gb-num{width:19px;height:19px;border-radius:50%;background:rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex-shrink:0}
+
+/* CONTAINER */
+.container{max-width:1200px;margin:0 auto;padding:20px 16px 40px;
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;flex:1}
+
+/* PANEL */
+.panel{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.panel-header{background:var(--surface2);border-bottom:1.5px solid var(--border2);
+  padding:12px 16px;display:flex;align-items:center;gap:10px}
+.panel-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.panel-title{font-size:13px;font-weight:800;color:var(--text);letter-spacing:.03em}
+.panel-body{padding:16px 18px 18px}
+
+/* Input Tabs */
+.input-tabs{display:flex;gap:6px;margin-bottom:12px}
+.input-tab{flex:1;padding:7px;border:1.5px solid var(--border);border-radius:8px;
+  background:var(--bg2);font-family:'Nanum Gothic',sans-serif;font-size:12px;font-weight:700;
+  color:var(--muted);cursor:pointer;transition:all .2s;text-align:center}
+.input-tab.active{border-color:var(--mint);color:var(--mint-d);background:var(--mint-l)}
+
+/* Textarea */
+textarea{width:100%;min-height:155px;border:1.5px solid var(--border2);border-radius:10px;
+  padding:12px 14px;font-family:'Nanum Gothic',sans-serif;font-size:13.5px;
+  line-height:1.7;color:var(--text);background:var(--surface2);resize:vertical;
+  transition:border-color .2s;outline:none}
+textarea:focus{border-color:var(--mint);background:var(--surface);box-shadow:0 0 0 3px var(--mint-l)}
+textarea::placeholder{color:var(--muted)}
+
+/* Upload */
+.upload-area{border:1.5px dashed var(--border);border-radius:10px;padding:22px 16px;
+  text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;
+  background:var(--surface2);position:relative}
+.upload-area:hover,.upload-area.dragover{border-color:var(--mint);background:var(--mint-ll)}
+.upload-area input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:26px;margin-bottom:5px}
+.upload-text{font-size:13px;color:var(--muted)}
+.upload-text strong{color:var(--mint-d)}
+.upload-hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6}
+
+.file-preview{display:flex;align-items:center;gap:10px;background:var(--mint-l);
+  border:1.5px solid var(--mint);border-radius:8px;padding:9px 12px;
+  font-size:13px;color:var(--text);margin-bottom:10px}
+.file-preview-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-remove{cursor:pointer;color:var(--muted);font-size:15px;background:none;border:none;padding:0;transition:color .2s}
+.file-remove:hover{color:var(--rose)}
+
+/* Options */
+.options-section{margin-top:14px}
+.options-label{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.multi-hint{font-size:10px;font-weight:700;letter-spacing:0;text-transform:none;
+  color:var(--mint-d);background:var(--mint-l);border:1.5px solid var(--mint);padding:1px 7px;border-radius:10px}
+
+/* Transform Grid */
+.transform-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.transform-btn{border:1.5px solid var(--border);background:var(--surface2);
+  border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .2s;
+  text-align:left;font-family:'Nanum Gothic',sans-serif;position:relative}
+.transform-btn:hover{border-color:var(--mint);background:var(--mint-ll)}
+.transform-btn.active{border-color:var(--mint);background:var(--mint-l)}
+.t-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:4px;
+  border:1.5px solid var(--border);background:white;display:flex;align-items:center;
+  justify-content:center;font-size:10px;transition:all .2s;color:white}
+.transform-btn.active .t-check{background:var(--mint-d);border-color:var(--mint-d)}
+.t-icon{font-size:16px;margin-bottom:3px}
+.t-name{font-size:11.5px;font-weight:800;color:var(--text);padding-right:20px}
+.t-desc{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* Difficulty */
+.difficulty-wrap{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.diff-label{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:700}
+input[type="range"]{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;
+  background:linear-gradient(to right,var(--mint-l),var(--mint),var(--mint-d));outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;
+  border-radius:50%;background:var(--mint-d);cursor:pointer;border:2px solid white;
+  box-shadow:0 0 0 3px rgba(45,212,191,.2)}
+
+/* Select */
+select{width:100%;border:1.5px solid var(--border2);border-radius:10px;padding:9px 12px;
+  font-family:'Nanum Gothic',sans-serif;font-size:13.5px;color:var(--text);
+  background:var(--surface2);outline:none;cursor:pointer;margin-bottom:12px;transition:border-color .2s}
+select:focus{border-color:var(--mint)}
+
+/* Generate Button */
+.generate-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--mint),var(--mint-d));
+  color:white;border:none;border-radius:12px;font-family:'Nanum Gothic',sans-serif;
+  font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;
+  box-shadow:0 4px 16px rgba(45,212,191,.30)}
+.generate-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(45,212,191,.40)}
+.generate-btn:active{transform:translateY(0)}
+.generate-btn:disabled{background:var(--muted);cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Warning Box */
+.warning-box{background:#fff9ed;border:1.5px solid #f5c980;border-radius:10px;
+  padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.85;color:#6e3d0a}
+.warn-title{font-weight:800;font-size:12.5px;color:#a06000;
+  display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.warning-box ul{padding-left:16px}
+.warning-box ul li{margin-bottom:3px}
+
+/* Result Tabs */
+.result-tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.result-tab{padding:4px 12px;border-radius:20px;border:1.5px solid var(--border);
+  font-size:11.5px;font-weight:700;cursor:pointer;background:var(--bg2);
+  color:var(--muted);transition:all .2s;font-family:'Nanum Gothic',sans-serif}
+.result-tab.active{background:var(--mint);border-color:var(--mint);color:white}
+
+/* Result Content */
+.result-content{background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;
+  padding:16px;font-size:13.5px;line-height:1.85;color:var(--text);
+  white-space:pre-wrap;font-family:'Nanum Gothic',sans-serif;min-height:180px;
+  animation:fadeIn .4s ease}
+.result-placeholder{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:220px;color:var(--muted);gap:10px}
+.result-placeholder .ph-icon{font-size:36px;opacity:.35}
+.result-placeholder .ph-text{font-size:13px;text-align:center;line-height:1.6}
+
+/* Loading */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;gap:14px}
+.spinner{width:34px;height:34px;border:3px solid var(--border);
+  border-top-color:var(--mint);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--muted);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* Actions */
+.result-actions{display:flex;gap:7px;margin-top:12px}
+.action-btn{flex:1;padding:8px;border:1.5px solid var(--border);background:var(--surface2);
+  border-radius:8px;font-family:'Nanum Gothic',sans-serif;font-size:12px;font-weight:700;
+  color:var(--sub);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.action-btn:hover{border-color:var(--mint);color:var(--mint-d);background:var(--mint-l)}
+
+/* Tag */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;
+  background:var(--mint-l);color:var(--mint-d);margin-left:6px;border:1px solid var(--mint)}
+
+/* History */
+.history-section{grid-column:1/-1}
+.history-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.history-item{background:var(--surface);border:1.5px solid var(--border2);
+  border-radius:10px;padding:11px 13px;cursor:pointer;transition:all .2s}
+.history-item:hover{border-color:var(--mint);box-shadow:0 4px 12px rgba(45,212,191,.12)}
+.history-type{font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--mint-d);text-transform:uppercase;margin-bottom:3px}
+.history-preview{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.history-time{font-size:11px;color:var(--muted)}
+
+/* Groq badge */
+.groq-badge{display:inline-flex;align-items:center;gap:5px;
+  background:var(--bg2);border:1.5px solid var(--border);border-radius:6px;
+  padding:3px 9px;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:12px}
+
+/* Footer */
+footer{text-align:center;padding:14px 20px;font-size:11.5px;color:var(--muted);
+  border-top:1.5px solid var(--border);margin-top:8px;background:var(--surface)}
+footer a{color:var(--mint-d);text-decoration:none;font-weight:700}
+footer a:hover{text-decoration:underline}
+
+/* Notif (toast) */
+#notif{position:fixed;top:16px;right:20px;background:var(--mint-d);color:#fff;
+  padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;
+  opacity:0;transform:translateY(-8px);transition:all .3s;pointer-events:none;
+  box-shadow:0 4px 16px rgba(13,148,136,.4)}
+#notif.show{opacity:1;transform:translateY(0)}
+
+.fade-in{animation:fadeIn .5s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:768px){
+  .container{grid-template-columns:1fr;padding:12px 10px 32px}
+  .history-section{grid-column:1}
+  .history-list{grid-template-columns:1fr}
+  .tagline,.logo-sub{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="logo-box">🏭</div>
+  <div class="logo-txt">수업 공장</div>
+  <div class="logo-sub">문제변형기</div>
+  <div class="tagline">2022 개정교육과정 · AI 프롬프트 자동 생성기</div>
+  <div class="hdr-acts">
+    <div class="api-badge">
+      <div class="api-dot" id="apiDot"></div>
+      <span id="apiStatus">Groq 연결됨</span>
+    </div>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> 돌아가기</a>
+  </div>
+</header>
+
+<!-- GUIDE BAR -->
+<div class="guide-bar">
+  <div class="gb-item"><div class="gb-num">1</div> 문제 입력</div>
+  <div class="gb-item"><div class="gb-num">2</div> 변형 유형 선택</div>
+  <div class="gb-item"><div class="gb-num">3</div> 난이도·학년 설정</div>
+  <div class="gb-item"><div class="gb-num">4</div> 변형 시작</div>
+  <div class="gb-item" style="border-right:none"><div class="gb-num">5</div> 결과 확인 & 복사</div>
+</div>
+
+<div class="container">
+
+  <!-- 입력 패널 -->
+  <div class="panel fade-in">
+    <div class="panel-header">
+      <div class="panel-icon" style="background:var(--mint-l)">✏️</div>
+      <div class="panel-title">문제 입력</div>
+    </div>
+    <div class="panel-body">
+
+      <div class="input-tabs">
+        <button class="input-tab active" id="tabText" onclick="switchTab('text')">✍️ 직접 입력</button>
+        <button class="input-tab" id="tabFile" onclick="switchTab('file')">📎 파일 업로드</button>
+      </div>
+
+      <!-- 직접 입력 -->
+      <div id="panelText">
+        <textarea id="questionInput" placeholder="문제를 입력하세요. 여러 문제를 한 번에 넣어도 됩니다.
+
+예시:
+1. 다음 중 광합성에 대한 설명으로 옳은 것은?
+① 빛에너지를 화학에너지로 전환한다
+② 미토콘드리아에서 일어난다
+③ 이산화탄소를 방출한다
+④ 밤에만 일어난다
+⑤ 동물세포에서도 활발히 일어난다
+
+2. 다음 빈칸에 알맞은 말을 쓰시오."></textarea>
+      </div>
+
+      <!-- 파일 업로드 -->
+      <div id="panelFile" style="display:none">
+        <div id="uploadArea" class="upload-area"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" accept=".txt" onchange="handleFileSelect(event)">
+          <div class="upload-icon" id="uploadIcon">📄</div>
+          <div class="upload-text"><strong>클릭하거나 파일을 드래그</strong>하여 업로드</div>
+          <div class="upload-hint">텍스트 파일(.txt)을 지원합니다<br>파일 내용이 자동으로 입력란에 로드됩니다</div>
+        </div>
+        <div id="filePreview" style="display:none" class="file-preview"></div>
+      </div>
+
+      <!-- 변형 유형 -->
+      <div class="options-section">
+        <div class="options-label">
+          변형 유형 선택
+          <span class="multi-hint">복수 선택 가능</span>
+        </div>
+        <div class="transform-grid">
+          <div class="transform-btn active" onclick="toggleTransform(this,'difficulty')" data-type="difficulty">
+            <div class="t-check">✓</div>
+            <div class="t-icon">📊</div>
+            <div class="t-name">난이도 조절</div>
+            <div class="t-desc">쉽게 또는 어렵게</div>
+          </div>
+          <div class="transform-btn" onclick="toggleTransform(this,'choices')" data-type="choices">
+            <div class="t-check"></div>
+            <div class="t-icon">🔀</div>
+            <div class="t-name">선택지 변형</div>
+            <div class="t-desc">오답 보기 재생성</div>
+          </div>
+          <div class="transform-btn" onclick="toggleTransform(this,'similar')" data-type="similar">
+            <div class="t-check"></div>
+            <div class="t-icon">♻️</div>
+            <div class="t-name">유사 문제 생성</div>
+            <div class="t-desc">같은 개념, 다른 문제</div>
+          </div>
+          <div class="transform-btn" onclick="toggleTransform(this,'convert')" data-type="convert">
+            <div class="t-check"></div>
+            <div class="t-icon">↔️</div>
+            <div class="t-name">유형 변환</div>
+            <div class="t-desc">객관식 ↔ 주관식</div>
+          </div>
+          <div class="transform-btn" onclick="toggleTransform(this,'hint')" data-type="hint" style="grid-column:1/-1">
+            <div class="t-check"></div>
+            <div class="t-icon">💡</div>
+            <div class="t-name">힌트 / 해설 생성</div>
+            <div class="t-desc">학생용 힌트 + 상세 해설 자동 작성</div>
+          </div>
+        </div>
+
+        <div id="difficultySlider" class="options-section">
+          <div class="options-label">목표 난이도</div>
+          <div class="difficulty-wrap">
+            <span class="diff-label">쉽게</span>
+            <input type="range" id="diffLevel" min="1" max="5" value="3">
+            <span class="diff-label">어렵게</span>
+          </div>
+        </div>
+
+        <div class="options-section">
+          <div class="options-label">대상 학년</div>
+          <select id="gradeSelect">
+            <option value="고1">고등학교 1학년</option>
+            <option value="고2" selected>고등학교 2학년</option>
+            <option value="고3">고등학교 3학년</option>
+            <option value="중3">중학교 3학년</option>
+            <option value="중2">중학교 2학년</option>
+            <option value="중1">중학교 1학년</option>
+          </select>
+        </div>
+
+        <div class="options-section">
+          <div class="options-label">AI 모델 선택</div>
+          <div class="groq-badge">⚡ Groq AI — 초고속 무료 모델</div>
+          <select id="modelSelect">
+            <option value="llama-3.3-70b-versatile">llama-3.3-70b (추천 · 고성능)</option>
+            <option value="llama-3.1-8b-instant">llama-3.1-8b (빠른 응답)</option>
+            <option value="mixtral-8x7b-32768">Mixtral 8x7b (긴 문서 처리)</option>
+            <option value="gemma2-9b-it">Gemma2 9b (Google 경량)</option>
+          </select>
+          <div style="font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:12px">💡 모든 모델이 완전 무료입니다</div>
+        </div>
+
+        <button class="generate-btn" id="generateBtn" onclick="generate()">
+          <i class="fas fa-wand-magic-sparkles"></i> 변형 시작
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 패널 -->
+  <div class="panel fade-in" style="animation-delay:.1s">
+    <div class="panel-header">
+      <div class="panel-icon" style="background:var(--mint-l)">✅</div>
+      <div>
+        <div class="panel-title">변형 결과 <span class="tag" id="resultTag" style="display:none"></span></div>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <!-- 경고 문구 -->
+      <div class="warning-box">
+        <div class="warn-title"><i class="fas fa-triangle-exclamation"></i> AI 생성 결과 사용 시 반드시 확인하세요</div>
+        <ul>
+          <li>본 결과물은 <strong>초안 참고용</strong>이며, 시험·학습지 활용 전 교사의 <strong>직접 검토와 수정이 필수</strong>입니다.</li>
+          <li>검토 없이 사용하여 발생하는 오류·저작권 문제 등 <strong>모든 책임은 사용자 본인</strong>에게 있습니다.</li>
+          <li>AI는 사실 오류나 오답을 생성할 수 있으므로 <strong>정답과 해설을 반드시 교차 검증</strong>하세요.</li>
+          <li>학생 개인정보가 포함된 자료는 절대 업로드하지 마세요.</li>
+          <li><strong>현재 버전은 PDF 및 이미지 파일을 지원하지 않습니다.</strong> 텍스트(.txt) 직접 입력 또는 파일 업로드만 가능합니다.</li>
+          <li><strong>수학문제의 수식 / 도형 / 표 / 이미지파일</strong> 처리를 못합니다.</li>
+          <li>본 문제 변형기는 <strong>현존 최고 속도의 Groq AI</strong>를 기반으로 빠르게 응답합니다.</li>
+          <li>💾 <strong>저장 버튼</strong>을 누르면 결과가 <strong>이 브라우저에만</strong> 저장됩니다. 브라우저 캐시 삭제 시 기록이 사라집니다.</li>
+          <li>Groq AI의 <strong>당일 토큰이 모두 소진</strong>되면 답변이 출력되지 않을 수 있습니다. <strong>잠시 후 다시 시도</strong>해 주세요.</li>
+        </ul>
+      </div>
+
+      <!-- 복수 결과 탭 -->
+      <div id="resultTabsWrap" style="display:none">
+        <div class="result-tabs" id="resultTabs"></div>
+      </div>
+
+      <div id="resultArea">
+        <div class="result-placeholder">
+          <div class="ph-icon">🏭</div>
+          <div class="ph-text">문제를 입력하고<br>변형 유형을 선택한 후<br>변형 시작을 눌러주세요</div>
+        </div>
+      </div>
+
+      <div class="result-actions" id="resultActions" style="display:none">
+        <button class="action-btn" onclick="copyResult()"><i class="fas fa-copy"></i> 복사</button>
+        <button class="action-btn" onclick="printResult()"><i class="fas fa-print"></i> 인쇄</button>
+        <button class="action-btn" onclick="saveToHistory()"><i class="fas fa-floppy-disk"></i> 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기록 패널 -->
+  <div class="panel history-section fade-in" id="historySection" style="display:none;animation-delay:.2s">
+    <div class="panel-header">
+      <div class="panel-icon" style="background:var(--mint-l)">🕒</div>
+      <div class="panel-title">최근 변형 기록</div>
+    </div>
+    <div class="panel-body">
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  제작 <a href="https://www.instagram.com/hirame.ki/" target="_blank">@hirame.ki</a>
+  &nbsp;·&nbsp; AI 생성 결과는 반드시 교사의 검토 후 사용하세요 &nbsp;·&nbsp; 수업 공장 🏭
+</footer>
+
+<div id="notif"></div>
+
+<script>
+  let selectedTypes = new Set(['difficulty']);
+  let currentResults = {};
+  let activeResultType = '';
+  let historyData = JSON.parse(localStorage.getItem('question_history') || '[]');
+  let inputMode = 'text';
+
+  const typeLabels = {
+    difficulty: '난이도 조절', choices: '선택지 변형',
+    similar: '유사 문제', convert: '유형 변환', hint: '힌트/해설'
+  };
+
+  renderHistory();
+
+  /* ── Tab ── */
+  function switchTab(mode) {
+    inputMode = mode;
+    document.getElementById('tabText').classList.toggle('active', mode==='text');
+    document.getElementById('tabFile').classList.toggle('active', mode==='file');
+    document.getElementById('panelText').style.display = mode==='text' ? 'block' : 'none';
+    document.getElementById('panelFile').style.display = mode==='file' ? 'block' : 'none';
+  }
+
+  /* ── File ── */
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) processFile(file);
+  }
+  function processFile(file) {
+    const isTxt = file.type === 'text/plain' || file.name.endsWith('.txt');
+    if (!isTxt) { showNotif('⚠️ .txt 파일만 업로드 가능합니다'); return; }
+    const preview = document.getElementById('filePreview');
+    preview.style.display = 'flex';
+    preview.innerHTML = `
+      <span style="font-size:18px">📄</span>
+      <span class="file-preview-name">${escapeHtml(file.name)}</span>
+      <button class="file-remove" onclick="removeFile()">✕</button>`;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      document.getElementById('questionInput').value = ev.target.result;
+      switchTab('text');
+      showNotif('📄 텍스트가 입력란에 로드되었습니다');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+  function removeFile() {
+    document.getElementById('filePreview').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+  }
+
+  /* ── Transform Toggle ── */
+  function toggleTransform(el, type) {
+    if (selectedTypes.has(type)) {
+      if (selectedTypes.size === 1) { showNotif('최소 1개는 선택해야 합니다'); return; }
+      selectedTypes.delete(type);
+      el.classList.remove('active');
+      el.querySelector('.t-check').textContent = '';
+    } else {
+      selectedTypes.add(type);
+      el.classList.add('active');
+      el.querySelector('.t-check').textContent = '✓';
+    }
+    document.getElementById('difficultySlider').style.display =
+      selectedTypes.has('difficulty') ? 'block' : 'none';
+  }
+
+  /* ── Generate ── */
+  async function generate() {
+    const grade = document.getElementById('gradeSelect').value;
+    const diff = document.getElementById('diffLevel').value;
+    const diffText = ['','매우 쉽게','쉽게','보통','어렵게','매우 어렵게'][diff];
+    const questionText = document.getElementById('questionInput').value.trim();
+
+    if (!questionText) { showNotif('문제를 입력해주세요'); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle"></span> 생성 중...';
+
+    currentResults = {}; activeResultType = '';
+    document.getElementById('resultActions').style.display = 'none';
+    document.getElementById('resultTag').style.display = 'none';
+    document.getElementById('resultTabsWrap').style.display = 'none';
+    const typesArr = Array.from(selectedTypes);
+    document.getElementById('resultArea').innerHTML = `
+      <div class="loading-wrap">
+        <div class="spinner"></div>
+        <div class="loading-text">⚡ Groq AI가 빠르게 변형하고 있습니다... (${typesArr.length}개 유형)</div>
+      </div>`;
+
+    // ── 할루시네이션 방지 공통 가이드라인 ──
+    const HALLUCINATION_GUARD = `
+[할루시네이션 방지 규칙 — 반드시 준수]
+- 원본 문제에 없는 개념·사실·용어를 임의로 추가하거나 지어내지 마세요.
+- 정답이 확실하지 않으면 추측하지 말고 해당 부분을 [검토 필요]로 표시하세요.
+- 과학·역사·수학 등 사실 기반 문제는 원본의 정답과 핵심 개념을 반드시 유지하세요.
+- 선택지를 만들 때 실제로 존재하지 않는 용어나 개념을 오답으로 사용하지 마세요.
+- 원본 문제의 과목·교육과정 범위를 벗어난 내용을 생성하지 마세요.
+- 알 수 없거나 확인되지 않은 내용은 생략하고, 생략 시 [생략됨]으로 표시하세요.`;
+
+    function buildPrompt(type, q) {
+      return {
+        difficulty: `당신은 ${grade} 교사입니다. 아래 시험 문제(들)을 난이도 [${diffText}] 수준으로 변형해주세요.\n원본 개념·유형은 유지하고 표현과 보기 복잡도만 조정하세요.\n변형된 문제만 깔끔하게 출력하세요.\n${HALLUCINATION_GUARD}\n\n원본 문제:\n${q}`,
+        choices: `당신은 ${grade} 교사입니다. 아래 객관식 문제(들)의 오답 보기를 새롭게 변형해주세요.\n정답은 유지하되 오답 보기를 더 그럴듯하고 헷갈리게 만들어주세요.\n변형된 문제 전체를 출력하세요.\n${HALLUCINATION_GUARD}\n\n원본 문제:\n${q}`,
+        similar: `당신은 ${grade} 교사입니다. 아래 문제(들)와 같은 개념·원리를 측정하는 유사 문제를 각 3가지씩 만들어주세요.\n문제 번호, 문제, 보기(객관식이면), 정답을 포함해주세요.\n${HALLUCINATION_GUARD}\n\n원본 문제:\n${q}`,
+        convert: `당신은 ${grade} 교사입니다. 아래 문제(들)의 유형을 변환해주세요.\n- 객관식 → 서술형/주관식\n- 주관식 → 객관식(5지선다)\n변환된 문제 전체를 출력하세요.\n${HALLUCINATION_GUARD}\n\n원본 문제:\n${q}`,
+        hint: `당신은 ${grade} 교사입니다. 아래 문제(들)에 대해 작성해주세요:\n1. 💡 학생용 힌트 (풀이 방향만, 정답 직접 알려주지 않기)\n2. 📖 상세 해설 (풀이 과정·핵심 개념·오답 이유 포함)\n3. 🎯 정답\n${HALLUCINATION_GUARD}\n\n문제:\n${q}`
+      }[type];
+    }
+
+    const currentModel = document.getElementById('modelSelect').value;
+
+    for (const type of typesArr) {
+      try {
+        const res = await fetch('/api/groq', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: currentModel,
+            messages: [
+              { role: 'system', content: '당신은 대한민국 교사를 위한 시험 문제 전문가입니다. 요청에 따라 문제를 변형·생성해주세요. 한국어로 답변하세요.\n\n[핵심 원칙] 절대로 사실을 지어내거나 추측하지 마세요. 원본 문제의 정답·개념·교육과정 범위를 철저히 준수하고, 확신할 수 없는 내용은 반드시 [검토 필요]로 표시하세요. 모르면 만들지 말고 표시하세요.' },
+              { role: 'user', content: buildPrompt(type, questionText) }
+            ],
+            temperature: 0.7,
+            max_tokens: 3000
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        currentResults[type] = data.choices?.[0]?.message?.content || '결과 없음';
+      } catch (err) {
+        currentResults[type] = `❌ 오류: ${err.message}\n\n잠시 후 다시 시도해주세요. 문제가 계속되면 관리자에게 문의하세요.`;
+      }
+    }
+
+    activeResultType = typesArr[0];
+    renderResultTabs();
+    showResultOf(activeResultType);
+    document.getElementById('resultActions').style.display = 'flex';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> 변형 시작';
+  }
+
+  function renderResultTabs() {
+    const types = Object.keys(currentResults);
+    if (types.length <= 1) { document.getElementById('resultTabsWrap').style.display = 'none'; return; }
+    document.getElementById('resultTabsWrap').style.display = 'block';
+    document.getElementById('resultTabs').innerHTML = types.map(t =>
+      `<div class="result-tab ${t===activeResultType?'active':''}" onclick="switchResultTab('${t}')">${typeLabels[t]}</div>`
+    ).join('');
+  }
+  function switchResultTab(type) {
+    activeResultType = type;
+    document.querySelectorAll('.result-tab').forEach(el =>
+      el.classList.toggle('active', el.textContent.trim() === typeLabels[type])
+    );
+    showResultOf(type);
+  }
+  function showResultOf(type) {
+    document.getElementById('resultArea').innerHTML =
+      `<div class="result-content">${escapeHtml(currentResults[type] || '')}</div>`;
+    const tag = document.getElementById('resultTag');
+    tag.textContent = typeLabels[type];
+    tag.style.display = 'inline-block';
+  }
+
+  /* ── Actions ── */
+  function copyResult() {
+    const t = currentResults[activeResultType];
+    if (!t) return;
+    navigator.clipboard.writeText(t).then(() => showNotif('📋 클립보드에 복사되었습니다'));
+  }
+  function printResult() {
+    const t = currentResults[activeResultType];
+    if (!t) return;
+    const win = window.open('', '_blank');
+    win.document.write(`<pre style="font-family:sans-serif;font-size:14px;line-height:1.8;padding:40px">${escapeHtml(t)}</pre>`);
+    win.print();
+  }
+  function saveToHistory() {
+    const t = currentResults[activeResultType];
+    if (!t) return;
+    const q = document.getElementById('questionInput').value || '';
+    const item = {
+      type: typeLabels[activeResultType],
+      preview: q.substring(0, 40),
+      result: t,
+      time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+    };
+    historyData.unshift(item);
+    if (historyData.length > 9) historyData.pop();
+    localStorage.setItem('question_history', JSON.stringify(historyData));
+    renderHistory();
+    showNotif('💾 기록에 저장되었습니다');
+  }
+
+  /* ── History ── */
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const section = document.getElementById('historySection');
+    if (historyData.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = historyData.map((item, i) => `
+      <div class="history-item" onclick="loadHistory(${i})">
+        <div class="history-type">${item.type}</div>
+        <div class="history-preview">${escapeHtml(item.preview)}...</div>
+        <div class="history-time">${item.time}</div>
+      </div>`).join('');
+  }
+  function loadHistory(i) {
+    const item = historyData[i];
+    const key = Object.keys(typeLabels).find(k => typeLabels[k] === item.type) || 'difficulty';
+    currentResults = { [key]: item.result };
+    activeResultType = key;
+    document.getElementById('resultTabsWrap').style.display = 'none';
+    showResultOf(key);
+    document.getElementById('resultActions').style.display = 'flex';
+  }
+
+  /* ── Util ── */
+  function showNotif(msg) {
+    const n = document.getElementById('notif');
+    n.textContent = msg;
+    n.classList.add('show');
+    setTimeout(() => n.classList.remove('show'), 2800);
+  }
+  function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

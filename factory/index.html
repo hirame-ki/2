@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H-Factory v1.2.0 — 교사를 위한 바탕화면 위젯</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='white'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%230a0a0a'%3EH%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0a0a0a;--paper:#f8f7f5;--g50:#f4f3f1;--g100:#ebe9e6;
+  --g200:#d5d2cd;--g400:#9a9691;--g600:#5a5652;
+  --gold:#c8b89a;--F:'Cormorant Garamond',serif;--B:'Noto Sans KR',sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--B);background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;font-weight:300;letter-spacing:.025em;-webkit-font-smoothing:antialiased;}
+
+/* ── HERO ── */
+.hero{position:relative;overflow:hidden;background:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:80px 40px;}
+#shader-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;}
+.hero-vignette{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 0%,transparent 50%,rgba(10,10,10,.55) 100%);}
+.hero-grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.06;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.7'/></svg>");}
+.hero-ghost{position:absolute;font-family:var(--F);font-size:clamp(120px,22vw,300px);font-weight:600;color:rgba(255,255,255,.05);letter-spacing:-.03em;user-select:none;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;z-index:2;}
+.hero-body{text-align:center;position:relative;z-index:3;max-width:720px;}
+.eyebrow{font-size:9px;letter-spacing:.45em;text-transform:uppercase;color:var(--gold);margin-bottom:24px;font-weight:400;}
+.hero-mark{font-family:var(--F);font-size:clamp(64px,10vw,130px);font-weight:300;color:var(--paper);line-height:1;letter-spacing:-.03em;margin-bottom:10px;}
+.hero-mark em{font-style:italic;}
+.hero-sub{font-size:11px;color:rgba(200,184,154,.6);letter-spacing:.32em;text-transform:uppercase;margin-bottom:14px;}
+.hero-desc{font-size:15px;color:rgba(248,247,245,.55);line-height:1.9;margin-bottom:52px;font-weight:300;letter-spacing:.04em;}
+
+/* ── CTA BUTTONS ── */
+.cta-group{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.cta{display:inline-flex;align-items:center;gap:10px;border:none;cursor:pointer;font-family:var(--B);font-size:10px;letter-spacing:.32em;text-transform:uppercase;font-weight:400;padding:15px 40px;transition:all .25s;text-decoration:none;}
+.cta-primary{background:var(--paper);color:var(--ink);}
+.cta-primary:hover{background:var(--gold);transform:translateY(-2px);}
+.cta-secondary{background:transparent;color:rgba(248,247,245,.7);border:1px solid rgba(248,247,245,.25);}
+.cta-secondary:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
+.cta-arr{font-size:14px;transition:transform .2s;}.cta:hover .cta-arr{transform:translateX(4px);}
+
+/* ── SCROLL HINT ── */
+.scroll-hint{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;animation:floatHint 2.5s ease-in-out infinite;}
+.scroll-hint-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold),transparent);}
+.scroll-hint-text{font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:rgba(200,184,154,.5);}
+@keyframes floatHint{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+/* ── FEATURES ── */
+.features{border-top:1px solid var(--g200);}
+.feat-head{padding:64px 40px 40px;text-align:center;border-bottom:1px solid var(--g200);}
+.feat-label{font-size:9px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.feat-title{font-family:var(--F);font-size:clamp(28px,4vw,44px);font-weight:300;letter-spacing:.06em;margin-bottom:10px;}
+.feat-title em{font-style:italic;}
+.feat-hint{font-size:13px;color:var(--g600);line-height:1.9;max-width:560px;margin:0 auto;}
+
+.feat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--g200);}
+.feat-item{background:var(--paper);padding:36px 36px 40px;}
+.feat-num{font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.feat-icon{font-size:28px;margin-bottom:14px;display:block;}
+.feat-name{font-family:var(--F);font-size:22px;font-weight:300;letter-spacing:.06em;margin-bottom:10px;}
+.feat-desc{font-size:13px;color:var(--g600);line-height:1.85;}
+
+/* ── WIDGET LIST ── */
+.widgets{border-top:1px solid var(--g200);}
+.wid-head{padding:64px 40px 40px;border-bottom:1px solid var(--g200);}
+.wid-label{font-size:9px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.wid-title{font-family:var(--F);font-size:clamp(28px,4vw,44px);font-weight:300;letter-spacing:.06em;}
+.wid-title em{font-style:italic;}
+.wid-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--g200);}
+.wid-item{background:var(--paper);padding:22px 24px;display:flex;align-items:flex-start;gap:14px;}
+.wid-emoji{font-size:20px;flex-shrink:0;margin-top:2px;}
+.wid-info{}
+.wid-name{font-size:13px;font-weight:500;letter-spacing:.03em;margin-bottom:4px;}
+.wid-sub{font-size:11px;color:var(--g400);line-height:1.7;}
+
+/* ── WORK TOOLS GUIDE ── */
+.wt-section{border-top:1px solid var(--g200);}
+.wt-head{padding:64px 40px 40px;border-bottom:1px solid var(--g200);text-align:center;}
+.wt-label{font-size:9px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.wt-title{font-family:var(--F);font-size:clamp(28px,4vw,44px);font-weight:300;letter-spacing:.06em;}
+.wt-title em{font-style:italic;}
+.wt-body{max-width:860px;margin:0 auto;padding:48px 40px;}
+.wt-intro{font-size:14px;color:var(--g600);line-height:1.9;margin-bottom:48px;text-align:center;}
+.wt-tool{margin-bottom:52px;}
+.wt-tool-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--g200);}
+.wt-tool-icon{font-size:26px;}
+.wt-tool-name{font-family:var(--F);font-size:26px;font-weight:300;letter-spacing:.04em;}
+.wt-tool-desc{font-size:13px;color:var(--g600);line-height:1.85;margin-bottom:20px;}
+.wt-sub{font-size:9px;letter-spacing:.38em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;margin-top:20px;}
+.wt-steps{list-style:none;counter-reset:wt;display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.wt-steps li{counter-increment:wt;display:flex;gap:14px;align-items:flex-start;font-size:13px;color:var(--g600);line-height:1.85;}
+.wt-steps li::before{content:counter(wt);font-family:var(--F);font-size:16px;font-weight:300;color:var(--gold);min-width:20px;flex-shrink:0;margin-top:1px;}
+.wt-bullets{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:20px;}
+.wt-bullets li{display:flex;gap:10px;font-size:13px;color:var(--g600);line-height:1.8;}
+.wt-bullets li::before{content:"·";color:var(--gold);font-size:18px;line-height:1.4;flex-shrink:0;}
+.wt-tip{display:flex;gap:12px;align-items:flex-start;background:var(--g50);border-left:2px solid var(--gold);padding:14px 18px;font-size:12px;color:var(--g600);line-height:1.85;margin-top:16px;}
+.wt-tip-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.wt-warn{display:flex;gap:12px;align-items:flex-start;background:#fffbf5;border-left:2px solid #e8a040;padding:14px 18px;font-size:12px;color:var(--g600);line-height:1.85;margin-top:16px;}
+.wt-warn-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.wt-neis-path{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--g50);border:1px solid var(--g200);border-radius:4px;padding:10px 16px;font-size:12px;color:var(--ink);letter-spacing:.03em;margin:12px 0 16px;}
+.wt-neis-arrow{color:var(--gold);font-size:11px;}
+@media(max-width:600px){.wt-body{padding:32px 24px;}}
+
+/* ── DOWNLOAD SECTION ── */
+.download{background:var(--ink);padding:80px 40px;text-align:center;position:relative;overflow:hidden;}
+#dl-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.6;}
+.dl-inner{position:relative;z-index:1;}
+.dl-label{font-size:9px;letter-spacing:.45em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.dl-title{font-family:var(--F);font-size:clamp(36px,6vw,72px);font-weight:300;color:var(--paper);line-height:1;letter-spacing:-.02em;margin-bottom:16px;}
+.dl-title em{font-style:italic;}
+.dl-desc{font-size:14px;color:rgba(248,247,245,.5);line-height:1.9;max-width:480px;margin:0 auto 48px;letter-spacing:.04em;}
+.dl-note{margin-top:28px;font-size:11px;color:rgba(200,184,154,.45);letter-spacing:.08em;line-height:1.8;}
+.dl-note b{color:rgba(200,184,154,.7);font-weight:400;}
+
+/* ── HOW TO ── */
+.howto{border-top:1px solid var(--g200);}
+.ht-head{padding:64px 40px 40px;border-bottom:1px solid var(--g200);text-align:center;}
+.ht-label{font-size:9px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.ht-title{font-family:var(--F);font-size:clamp(28px,4vw,44px);font-weight:300;letter-spacing:.06em;}
+.ht-title em{font-style:italic;}
+.ht-steps{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:var(--g200);}
+.ht-step{background:var(--paper);padding:36px 32px;}
+.ht-snum{font-size:9px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.ht-sicon{font-size:32px;margin-bottom:14px;display:block;}
+.ht-sname{font-family:var(--F);font-size:20px;font-weight:300;letter-spacing:.06em;margin-bottom:10px;}
+.ht-sdesc{font-size:13px;color:var(--g600);line-height:1.85;}
+.ht-warn{margin:0;padding:24px 40px;background:var(--g50);border-top:1px solid var(--g200);border-bottom:1px solid var(--g200);}
+.ht-warn-inner{max-width:860px;margin:0 auto;display:flex;gap:16px;align-items:flex-start;}
+.ht-warn-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.ht-warn-text{font-size:13px;color:var(--g600);line-height:1.9;}
+.ht-warn-text b{color:var(--ink);font-weight:500;}
+
+/* ── FOOTER ── */
+footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.footer-brand{font-family:var(--F);font-size:22px;font-weight:300;letter-spacing:-.02em;}
+.footer-info{font-size:11px;color:var(--g400);line-height:1.9;letter-spacing:.04em;}
+.footer-info a{color:var(--gold);text-decoration:none;transition:opacity .2s;}.footer-info a:hover{opacity:.7;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero-body{animation:fadeUp .8s var(--ease) .2s both;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .feat-grid,.ht-steps{grid-template-columns:1fr 1fr;}
+  .wid-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:600px){
+  .hero{padding:60px 24px;}
+  .feat-grid,.ht-steps,.wid-grid{grid-template-columns:1fr;}
+  .feat-head,.wid-head,.ht-head,.feat-item,.wid-item,.ht-step{padding-left:24px;padding-right:24px;}
+  footer{flex-direction:column;}
+  .cta-group{flex-direction:column;align-items:center;}
+}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--g100);}::-webkit-scrollbar-thumb{background:var(--g200);}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <canvas id="shader-canvas"></canvas>
+  <div class="hero-vignette"></div>
+  <div class="hero-grain"></div>
+  <div class="hero-ghost">H</div>
+  <div class="hero-body">
+    <div class="eyebrow">교사를 위한 Windows 바탕화면 위젯 · 무료 · v1.2.0</div>
+    <div class="hero-mark">H&#8209;<em>F</em>actory</div>
+    <div class="hero-sub">Desktop Widget App for Teachers</div>
+    <div class="hero-desc">
+      수업, 급식, 시간표, 날씨, 할 일까지.<br>
+      교사에게 필요한 모든 것을 바탕화면 위에 펼쳐두세요.
+    </div>
+    <div class="cta-group">
+      <a class="cta cta-primary" href="https://github.com/esquire0-cell/deploy/releases/latest" target="_blank">
+        ⬇︎ &nbsp;지금 다운로드 <span class="cta-arr">→</span>
+      </a>
+      <a class="cta cta-secondary" href="https://www.notion.so/H-Factory-3507fde37cfc81e9bc11c64cd8eb754a" target="_blank">
+        📖 &nbsp;사용 설명서
+      </a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-hint-line"></div>
+    <div class="scroll-hint-text">Scroll</div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="features">
+  <div class="feat-head">
+    <div class="feat-label">Features</div>
+    <div class="feat-title">교사의 하루를 <em>더 가볍게</em></div>
+    <div class="feat-hint">H-Factory는 교사의 일상 업무를 돕기 위해 설계된 위젯 앱입니다. 설치하고 바탕화면에 올려두기만 하면 됩니다.</div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-item">
+      <div class="feat-num">Feature 01</div>
+      <span class="feat-icon">🏫</span>
+      <div class="feat-name">NEIS 자동 연동</div>
+      <div class="feat-desc">학교 급식 메뉴와 학사일정을 NEIS에서 자동으로 불러옵니다. API 키 없이도 기본 사용이 가능합니다.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-num">Feature 02</div>
+      <span class="feat-icon">⏱️</span>
+      <div class="feat-name">교시 타이머</div>
+      <div class="feat-desc">현재 교시와 남은 시간을 실시간으로 표시합니다. 시간표와 연동되어 다음 수업도 미리 알려줍니다.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-num">Feature 03</div>
+      <span class="feat-icon">🎲</span>
+      <div class="feat-name">수업 도구 모음</div>
+      <div class="feat-desc">무작위 추첨, 타이머, 사다리타기, 룰렛, QR코드, 뽀모도로까지. 수업 진행에 필요한 도구를 한곳에서.</div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-num">Feature 04</div>
+      <span class="feat-icon">🗂️</span>
+      <div class="feat-name">업무도구 모음</div>
+      <div class="feat-desc">상담 일지, 진도 체크, 성적 분석, 간단 성적 산출, 학급 이벤트 플래너까지. 학급 담임 교사의 핵심 업무를 별도 창에서 깊이 있게 관리할 수 있습니다.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WIDGET LIST ── -->
+<section class="widgets">
+  <div class="wid-head">
+    <div class="wid-label">18 Widgets</div>
+    <div class="wid-title">총 <em>18가지</em> 위젯</div>
+  </div>
+  <div class="wid-grid">
+    <div class="wid-item"><span class="wid-emoji">🕐</span><div class="wid-info"><div class="wid-name">시계</div><div class="wid-sub">현재 시각·날짜·요일 표시</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📅</span><div class="wid-info"><div class="wid-name">시간표</div><div class="wid-sub">주간 시간표, 현재 교시 강조</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">⏱️</span><div class="wid-info"><div class="wid-name">교시 타이머</div><div class="wid-sub">남은 시간 카운트다운, 주말 휴일 표시</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🍱</span><div class="wid-info"><div class="wid-name">급식</div><div class="wid-sub">NEIS 자동 연동, 날짜 이동</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">✅</span><div class="wid-info"><div class="wid-name">할 일</div><div class="wid-sub">중요도·마감일·임박 알림·드래그 순서 변경</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📝</span><div class="wid-info"><div class="wid-name">메모</div><div class="wid-sub">자유 텍스트 자동 저장</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📅</span><div class="wid-info"><div class="wid-name">D-DAY</div><div class="wid-sub">여러 날짜 등록·자동 카운트·수정 버튼</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🔗</span><div class="wid-info"><div class="wid-name">바로가기</div><div class="wid-sub">URL·파일·폴더 즉시 실행·한글 경로 지원</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🎲</span><div class="wid-info"><div class="wid-name">수업도구</div><div class="wid-sub">추첨·타이머·사다리·룰렛·QR</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📋</span><div class="wid-info"><div class="wid-name">명렬표</div><div class="wid-sub">반별 출결 체크·메모</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📅</span><div class="wid-info"><div class="wid-name">학사일정</div><div class="wid-sub">월간 달력 + NEIS 연동</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🌤️</span><div class="wid-info"><div class="wid-name">날씨</div><div class="wid-sub">API 키 불필요, 30분 갱신</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📊</span><div class="wid-info"><div class="wid-name">학급통계</div><div class="wid-sub">월별 출결 현황 바차트</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">📌</span><div class="wid-info"><div class="wid-name">포스트잇</div><div class="wid-sub">5색상, 자동 저장</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🔔</span><div class="wid-info"><div class="wid-name">커스텀 알림</div><div class="wid-sub">시간·메시지 등록 팝업</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🖥️</span><div class="wid-info"><div class="wid-name">시스템 제어</div><div class="wid-sub">볼륨·밝기·와이파이 슬라이더</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">✨</span><div class="wid-info"><div class="wid-name">명패</div><div class="wid-sub">무지개·반짝임·웨이브·글로우·파이어</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🗂️</span><div class="wid-info"><div class="wid-name">업무도구</div><div class="wid-sub">상담·진도·성적분석·성적산출·이벤트플래너</div></div></div>
+  </div>
+</section>
+
+<!-- ── HOW TO ── -->
+<section class="howto">
+  <div class="ht-head">
+    <div class="ht-label">How to Install</div>
+    <div class="ht-title">설치 방법은 <em>단 4단계</em></div>
+  </div>
+  <div class="ht-steps">
+    <div class="ht-step">
+      <div class="ht-snum">Step 01</div>
+      <span class="ht-sicon">🔗</span>
+      <div class="ht-sname">다운로드 페이지 열기</div>
+      <div class="ht-sdesc">아래 다운로드 버튼을 클릭하면 GitHub Releases 페이지로 이동합니다. 로그인 없이 누구나 무료로 받을 수 있습니다.</div>
+    </div>
+    <div class="ht-step">
+      <div class="ht-snum">Step 02</div>
+      <span class="ht-sicon">📦</span>
+      <div class="ht-sname">.exe 파일 다운로드</div>
+      <div class="ht-sdesc">페이지 하단 <b>Assets</b> 목록에서 <b>H-Factory.Setup.x.x.x.exe</b> 파일만 클릭하여 받으세요. 다른 파일(.blockmap, .yml 등)은 필요 없습니다.</div>
+    </div>
+    <div class="ht-step">
+      <div class="ht-snum">Step 03</div>
+      <span class="ht-sicon">🛡️</span>
+      <div class="ht-sname">Windows 보안 경고 허용</div>
+      <div class="ht-sdesc">처음 실행 시 파란색 보안 경고 팝업이 나타날 수 있습니다. <b>"추가 정보"</b>를 클릭한 후 <b>"실행"</b>을 누르면 됩니다. 악성 소프트웨어가 아니니 안심하세요.</div>
+    </div>
+    <div class="ht-step">
+      <div class="ht-snum">Step 04</div>
+      <span class="ht-sicon">🎉</span>
+      <div class="ht-sname">바탕화면에서 시작!</div>
+      <div class="ht-sdesc">설치가 완료되면 H-Factory가 바탕화면 위에 바로 실행됩니다. 이후 업데이트는 앱에서 자동으로 알려줍니다.</div>
+    </div>
+  </div>
+  <div class="ht-warn">
+    <div class="ht-warn-inner">
+      <span class="ht-warn-icon">⚠️</span>
+      <div class="ht-warn-text">
+        <b>파일이 "확인되지 않음 XXXXXX.crdownload"로 저장되나요?</b><br>
+        Chrome/Edge 브라우저가 .exe 파일을 위험하다고 판단해 차단한 것입니다. 실제 악성 소프트웨어가 아니니 안심하세요. 아래 세 가지 방법 중 하나로 해결할 수 있습니다.<br><br>
+        <b>방법 1 — 파일 이름 바꾸기 (가장 빠름)</b><br>
+        다운로드 폴더에서 .crdownload 파일을 우클릭 → 이름 바꾸기 → <b>H-Factory.Setup.exe</b> 로 변경 → 확장자 경고 팝업에서 <b>예</b> 클릭 → 실행<br><br>
+        <b>방법 2 — 브라우저 다운로드 목록에서 허용</b><br>
+        Chrome 주소창에 <b>chrome://downloads</b> 입력 → 해당 파일 옆 ⋮ 메뉴 → <b>유지</b> 또는 <b>허용</b> 클릭<br><br>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WORK TOOLS GUIDE ── -->
+<section class="wt-section">
+  <div class="wt-head">
+    <div class="wt-label">How to Use</div>
+    <div class="wt-title">업무도구 <em>사용법</em></div>
+  </div>
+  <div class="wt-body">
+    <p class="wt-intro">업무도구 위젯(🗂️)의 도구 버튼을 클릭하면 각 도구가 별도 창으로 열립니다.</p>
+
+    <!-- 상담 일지 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">💬</span>
+        <div class="wt-tool-name">상담 일지</div>
+      </div>
+      <p class="wt-tool-desc">학생별 상담 내용을 날짜별로 기록하고 조회하는 도구입니다.</p>
+      <div class="wt-sub">기본 사용법</div>
+      <ol class="wt-steps">
+        <li>좌측 패널에서 반 선택 후 상담할 학생 클릭</li>
+        <li>우측 상담 기록 패널에서 <b>+ 상담 추가</b> 버튼 클릭</li>
+        <li>날짜, 상담 유형(학업 / 생활 / 진로 / 기타), 상담 내용 입력 후 저장</li>
+        <li>저장된 상담 기록은 날짜 역순으로 타임라인 형식으로 표시됩니다</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>상담 횟수 배지:</b> 학생 목록에서 각 학생의 누적 상담 횟수 확인 가능</li>
+        <li><b>이름 검색:</b> 상단 검색창으로 학생 빠르게 찾기</li>
+        <li><b>상담 유형 색상 코딩:</b> 학업(파랑) / 생활(초록) / 진로(주황) / 기타(회색)</li>
+        <li><b>엑셀 내보내기:</b> 전체 학생 요약 시트 + 학생별 개별 시트로 내보내기 가능</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>상담 일지 데이터는 H-Factory 설정 파일에 자동 저장됩니다. 앱을 재실행해도 데이터가 유지됩니다.</span></div>
+    </div>
+
+    <!-- 진도 체크 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📋</span>
+        <div class="wt-tool-name">진도 체크</div>
+      </div>
+      <p class="wt-tool-desc">반별 단원·차시 진도를 기록하고 관리하는 도구입니다.</p>
+      <div class="wt-sub">기본 사용법</div>
+      <ol class="wt-steps">
+        <li>상단에서 과목 탭 추가 (＋ 버튼)</li>
+        <li>상단 우측에서 반 버튼 추가</li>
+        <li>좌측 사이드바에서 <b>단원 추가</b> 버튼으로 단원 등록</li>
+        <li>우측 콘텐츠 영역에서 각 단원의 <b>＋ 차시 추가</b> 버튼으로 차시 등록</li>
+        <li>각 차시별로 미완료 / 진행중 / 완료 상태 선택</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li>과목별, 반별로 진도 상태를 독립적으로 관리</li>
+        <li>단원 카드에 진행률 표시 (프로그레스 바 + 퍼센트)</li>
+        <li>하단 요약 바에서 전체 차시 완료/진행중/미완료 현황 확인</li>
+        <li>데이터는 브라우저 로컬스토리지에 자동 저장</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>처음 실행 시 과목과 반이 비어 있습니다. 상단 ＋ 버튼으로 직접 추가해주세요.</span></div>
+    </div>
+
+    <!-- 성적 분석 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📊</span>
+        <div class="wt-tool-name">성적 분석</div>
+      </div>
+      <p class="wt-tool-desc">NEIS에서 내보낸 성적 파일을 분석하여 학생별 성적 변화 추이와 AI 상담 프롬프트를 생성하는 도구입니다.</p>
+      <div class="wt-sub">엑셀 파일 다운로드 방법 (NEIS)</div>
+      <div class="wt-neis-path">나이스 <span class="wt-neis-arrow">▸</span> 학급담임 <span class="wt-neis-arrow">▸</span> 학교생활기록부 <span class="wt-neis-arrow">▸</span> 학생부 항목별 조회 <span class="wt-neis-arrow">▸</span> 교과학습발달상황(전체학생)</div>
+      <p style="font-size:12px;color:var(--g600);margin-bottom:20px;">위 경로에서 <code>.xlsx</code> 파일을 다운로드하여 사용합니다.</p>
+      <div class="wt-sub">사용 방법</div>
+      <ol class="wt-steps">
+        <li>좌측 업로드 존에 NEIS 성적 파일(.xlsx)을 드래그하거나 클릭하여 선택</li>
+        <li>드롭다운에서 분석할 학생 선택</li>
+        <li>원하는 과목 칩(chip)을 선택/해제하여 분석 범위 지정 (전체선택/전체해제 버튼 제공)</li>
+        <li>학생의 진로 희망 직업/계열 입력 (선택)</li>
+        <li>상담 참고용 담임 메모 입력 (선택)</li>
+        <li><b>📊 분석 &amp; 프롬프트 생성</b> 버튼 클릭</li>
+      </ol>
+      <div class="wt-sub">분석 결과</div>
+      <ul class="wt-bullets">
+        <li><b>학생 요약:</b> 분석 과목 수, 평균 등급, 최고/최저 등급 요약 카드</li>
+        <li><b>과목별 성적 현황:</b> 학년·학기별 등급을 한눈에 보는 표</li>
+        <li><b>성적 변화 추이 그래프:</b> 계열별(전체/국어/수학/영어/사회/과학/기타) 탭으로 전환하며 선 그래프로 확인</li>
+        <li><b>AI 상담 프롬프트 자동 생성:</b> 생성된 프롬프트를 Claude, ChatGPT, Gemini에 붙여넣어 성적 분석·진로 추천·학습 방향·상담 포인트를 받을 수 있습니다</li>
+        <li><b>엑셀 다운로드:</b> 분석 결과를 <code>.xlsx</code> 파일로 저장 가능</li>
+      </ul>
+      <div class="wt-warn"><span class="wt-warn-icon">⚠️</span><span>5등급제(고교학점제 이전)와 9등급제(수능 과목) 모두 자동으로 지원합니다.</span></div>
+    </div>
+
+    <!-- 간단 성적 산출 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📊</span>
+        <div class="wt-tool-name">간단 성적 산출</div>
+      </div>
+      <p class="wt-tool-desc">지필·수행 항목별 반영비율을 설정하고 점수를 입력하면 100점 환산 점수, 등수, 등급을 자동으로 산출합니다. 엑셀 양식 다운로드 후 점수를 입력해 업로드하는 방식도 지원합니다.</p>
+      <div class="wt-sub">기본 사용법</div>
+      <ol class="wt-steps">
+        <li><b>항목 설정</b> 탭에서 평가 항목(예: 지필1, 수행1)과 만점, 반영비율(%) 입력 — 합계가 100%가 되도록 설정</li>
+        <li><b>채점표</b> 탭에서 반 선택 → 명렬표에서 학생 자동 불러오기</li>
+        <li>각 학생의 항목별 점수 직접 입력 또는 엑셀 업로드로 일괄 입력</li>
+        <li>상단 <b>성적산출</b> 버튼 클릭 → 환산점수·등수·등급 자동 계산</li>
+        <li>필요 시 <b>엑셀 내보내기</b>로 결과 저장</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>반영비율 환산:</b> 각 항목 점수 ÷ 만점 × 반영비율 합산 → 100점 기준 환산점수 자동 계산</li>
+        <li><b>등급 선택:</b> 9등급제 / 5등급제 그때그때 선택 가능 (고3↔나머지 학년 유연하게 사용)</li>
+        <li><b>정렬:</b> 번호순 / 등수순 / 점수순 토글</li>
+        <li><b>엑셀 양식 다운로드:</b> 반 학생 명단이 포함된 입력 양식 생성 → 작성 후 업로드로 점수 일괄 적용</li>
+        <li><b>통계 표시:</b> 성적산출 후 인원·평균·최고·최저 요약</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>항목 설정과 점수 데이터는 브라우저 로컬스토리지에 저장됩니다. 창을 닫고 다시 열어도 유지됩니다.</span></div>
+    </div>
+
+    <!-- 학급 이벤트 플래너 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📅</span>
+        <div class="wt-tool-name">학급 이벤트 플래너</div>
+      </div>
+      <p class="wt-tool-desc">학급 행사, 시험, 체험학습, 학생 생일 등을 등록하고 D-DAY 위젯에 자동 연동합니다. 당일 앱 실행 시 팝업 알림도 제공합니다.</p>
+      <div class="wt-sub">기본 사용법</div>
+      <ol class="wt-steps">
+        <li><b>이벤트 추가</b> 탭에서 이름·날짜·유형·관련 반 입력</li>
+        <li><b>디데이 위젯에 자동 등록</b> 토글 켜고 등록 → D-DAY 위젯에 즉시 반영</li>
+        <li><b>생일 관리</b> 탭에서 학생 이름·생일(MM-DD) 입력 → 올해/내년 기준 날짜 자동 계산 후 D-DAY 등록</li>
+        <li>이벤트 목록에서 미등록 이벤트는 📌 버튼으로 언제든 D-DAY에 추가 가능</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>D-DAY 자동 연동:</b> 등록한 이벤트·생일이 바탕화면 D-DAY 위젯에 실시간 반영</li>
+        <li><b>당일 팝업 알림:</b> 앱 실행 시 오늘 해당하는 이벤트·생일을 중앙 팝업으로 알림 (하루 1회)</li>
+        <li><b>유형별 필터:</b> 생일·시험·체험학습·행사·기타로 분류 및 필터링</li>
+        <li><b>명렬표 연동:</b> 반 선택 시 명렬표에서 학생 목록 자동 불러오기</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>생일은 MM-DD 형식(예: 03-15)으로 입력하면 올해 생일이 지났을 경우 자동으로 내년 날짜로 D-DAY를 등록합니다.</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── DOWNLOAD CTA ── -->
+<section class="download">
+  <canvas id="dl-canvas"></canvas>
+  <div class="dl-inner">
+    <div class="dl-label">Free Download · Windows</div>
+    <div class="dl-title">지금 바로<br><em>시작하세요</em></div>
+    <div class="dl-desc">설치비도, 구독료도, 로그인도 없습니다.<br>완전 무료로 모든 기능을 사용할 수 있습니다.</div>
+    <div class="cta-group">
+      <a class="cta cta-primary" href="https://github.com/esquire0-cell/deploy/releases/latest" target="_blank">
+        ⬇︎ &nbsp;최신 버전 다운로드 <span class="cta-arr">→</span>
+      </a>
+      <a class="cta cta-secondary" href="https://www.notion.so/H-Factory-3507fde37cfc81e9bc11c64cd8eb754a" target="_blank">
+        📖 &nbsp;사용 설명서 보기
+      </a>
+    </div>
+    <div class="dl-note">
+      Windows 전용 앱입니다 · macOS는 지원하지 않습니다<br>
+      <b>자동 업데이트</b> 지원 — 새 버전이 나오면 앱에서 바로 알려드립니다<br>
+      <b>글씨 크기 슬라이더</b> — 편집 모드 하단 바에서 위젯 텍스트 크기를 80~170% 실시간 조절
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-brand">H&#8209;<em style="font-style:italic">F</em>actory</div>
+  <div class="footer-info">
+    Engineered by 황성재 · 성포고<br>
+    powered by caffeine ☕ &nbsp;·&nbsp;
+    <a href="https://www.instagram.com/hirame.ki" target="_blank">@hirame.ki</a>
+  </div>
+</footer>
+
+<script>
+// ══ SILK SHADER (hero) ══
+(function(){
+  const canvas=document.getElementById('shader-canvas');
+  if(!canvas)return;
+  const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');
+  if(!gl){canvas.style.display='none';return;}
+
+  const vert=`attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+  const fragSilk=`precision highp float;
+uniform vec2 u_res;uniform float u_t;uniform vec2 u_mouse;uniform float u_mAmt;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);float a=hash(i),b=hash(i+vec2(1.,0.)),c=hash(i+vec2(0.,1.)),d=hash(i+vec2(1.,1.));vec2 u=f*f*(3.-2.*f);return mix(a,b,u.x)+(c-a)*u.y*(1.-u.x)+(d-b)*u.x*u.y;}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*u_res)/u_res.y;
+  float t=u_t*.06;
+  vec2 mDir=u_mouse*u_mAmt;
+  vec2 q=vec2(fbm(uv*1.3+vec2(t,-t*.7)+mDir*.6),fbm(uv*1.3+vec2(-t*.5,t)+5.2-mDir*.5));
+  float f=fbm(uv*2.2+q*1.6+vec2(t*.3,0.)+mDir*.3);
+  float ribbons=sin((uv.y*3.0+f*4.0+t*1.2+mDir.x*2.)*3.14159);
+  ribbons=smoothstep(.2,.95,ribbons*.5+.5);
+  vec3 ink=vec3(.039,.039,.043);
+  vec3 gold=vec3(.784,.722,.604);
+  vec3 warmGold=vec3(.92,.82,.62);
+  vec3 col=mix(ink,gold*.55,ribbons*.65);
+  col+=warmGold*pow(f,3.0)*.35;
+  float md=length(uv-u_mouse*1.2);
+  col+=warmGold*smoothstep(.6,.0,md)*u_mAmt*.25;
+  float v=1.-length(uv)*.4;
+  col*=v;
+  gl_FragColor=vec4(col,1.);
+}`;
+
+  function compile(src,type){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+  function makeProg(fragSrc){const v=compile(vert,gl.VERTEX_SHADER),f=compile(fragSrc,gl.FRAGMENT_SHADER);const p=gl.createProgram();gl.attachShader(p,v);gl.attachShader(p,f);gl.linkProgram(p);return p;}
+  const prog=makeProg(fragSilk);
+  const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const pLoc=gl.getAttribLocation(prog,'p');
+  const uRes=gl.getUniformLocation(prog,'u_res');
+  const uT=gl.getUniformLocation(prog,'u_t');
+  const uMouse=gl.getUniformLocation(prog,'u_mouse');
+  const uMAmt=gl.getUniformLocation(prog,'u_mAmt');
+
+  let mouseTarget={x:0,y:0},mouseSmooth={x:0,y:0},mAmtTarget=0,mAmtSmooth=0,lastMove=0;
+  const hero=document.querySelector('.hero');
+  function onMove(e){
+    const r=hero.getBoundingClientRect();
+    const cx=(e.clientX??e.touches?.[0]?.clientX??0)-r.left;
+    const cy=(e.clientY??e.touches?.[0]?.clientY??0)-r.top;
+    mouseTarget.x=(cx/r.width)*2-1;
+    mouseTarget.y=-((cy/r.height)*2-1);
+    mAmtTarget=1;lastMove=Date.now();
+  }
+  hero.addEventListener('mousemove',onMove,{passive:true});
+  hero.addEventListener('touchmove',onMove,{passive:true});
+
+  function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;gl.viewport(0,0,canvas.width,canvas.height);}
+  resize();new ResizeObserver(resize).observe(canvas);
+
+  let t0=null;
+  function frame(ts){
+    if(t0===null)t0=ts;
+    const t=(ts-t0)/1000;
+    if(Date.now()-lastMove>2000)mAmtTarget=0;
+    mouseSmooth.x+=(mouseTarget.x-mouseSmooth.x)*.05;
+    mouseSmooth.y+=(mouseTarget.y-mouseSmooth.y)*.05;
+    mAmtSmooth+=(mAmtTarget-mAmtSmooth)*.04;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.enableVertexAttribArray(pLoc);gl.vertexAttribPointer(pLoc,2,gl.FLOAT,false,0,0);
+    gl.uniform2f(uRes,canvas.width,canvas.height);
+    gl.uniform1f(uT,t);
+    gl.uniform2f(uMouse,mouseSmooth.x,mouseSmooth.y);
+    gl.uniform1f(uMAmt,mAmtSmooth);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+// ══ SILK SHADER (download section - lighter) ══
+(function(){
+  const canvas=document.getElementById('dl-canvas');
+  if(!canvas)return;
+  const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');
+  if(!gl){canvas.style.display='none';return;}
+  const vert=`attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+  const frag=`precision highp float;
+uniform vec2 u_res;uniform float u_t;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);float a=hash(i),b=hash(i+vec2(1.,0.)),c=hash(i+vec2(0.,1.)),d=hash(i+vec2(1.,1.));vec2 u=f*f*(3.-2.*f);return mix(a,b,u.x)+(c-a)*u.y*(1.-u.x)+(d-b)*u.x*u.y;}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*u_res)/u_res.y;
+  float t=u_t*.04;
+  vec2 q=vec2(fbm(uv*1.1+vec2(t,-t*.5)),fbm(uv*1.1+vec2(-t*.4,t)+5.2));
+  float f=fbm(uv*1.8+q*1.4+vec2(t*.2,0.));
+  float ribbons=sin((uv.y*2.5+f*3.5+t)*3.14159);
+  ribbons=smoothstep(.3,.9,ribbons*.5+.5);
+  vec3 ink=vec3(.039,.039,.043);
+  vec3 gold=vec3(.784,.722,.604);
+  vec3 col=mix(ink,gold*.4,ribbons*.5);
+  col+=gold*pow(f,3.0)*.2;
+  gl_FragColor=vec4(col,1.);
+}`;
+  function compile(src,type){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+  const v=compile(vert,gl.VERTEX_SHADER),fg=compile(frag,gl.FRAGMENT_SHADER);
+  const prog=gl.createProgram();gl.attachShader(prog,v);gl.attachShader(prog,fg);gl.linkProgram(prog);
+  const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const pLoc=gl.getAttribLocation(prog,'p');
+  const uRes=gl.getUniformLocation(prog,'u_res');
+  const uT=gl.getUniformLocation(prog,'u_t');
+  function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;gl.viewport(0,0,canvas.width,canvas.height);}
+  resize();new ResizeObserver(resize).observe(canvas);
+  let t0=null;
+  function frame(ts){
+    if(t0===null)t0=ts;
+    gl.useProgram(prog);gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.enableVertexAttribArray(pLoc);gl.vertexAttribPointer(pLoc,2,gl.FLOAT,false,0,0);
+    gl.uniform2f(uRes,canvas.width,canvas.height);
+    gl.uniform1f(uT,(ts-t0)/1000);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

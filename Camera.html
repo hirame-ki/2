@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>📷 우리끼리 찰칵</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Gowun Dodum','Nanum Gothic',sans-serif;background:#fdf6fb;color:#4a3050;min-height:100vh;overflow-x:hidden;}
+
+/* 제작자 크레딧 */
+.cam-credit{text-align:center;font-size:11px;color:#c097b8;padding:2px 0 4px;}
+.cam-credit a{color:#E91E63;font-weight:700;text-decoration:none;}
+.cam-credit a:hover{text-decoration:underline;}
+
+/* 래퍼 */
+.cam-wrap{max-width:430px;margin:0 auto;padding:12px;display:flex;flex-direction:column;gap:12px;}
+
+/* 히어로 */
+.cam-hero{background:linear-gradient(135deg,#880E4F,#E91E63,#FF80AB);border-radius:18px;padding:20px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+.cam-hero::after{content:'📷';position:absolute;font-size:60px;right:12px;bottom:-8px;opacity:.2;}
+.cam-hero-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:4px;}
+.cam-hero-sub{font-size:12px;opacity:.85;}
+
+/* 효과 바 */
+.cam-effect-bar{background:#fff;border-radius:14px;padding:12px;border:1px solid #f3d0e5;}
+.cam-effect-label{font-size:10px;color:#9c7aaa;font-weight:700;letter-spacing:1px;margin-bottom:8px;}
+.cam-effect-btns{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.cam-effect-btns::-webkit-scrollbar{display:none;}
+.cam-effect-btn{flex:0 0 auto;width:52px;height:52px;border-radius:13px;border:2px solid transparent;background:#fff0f7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font-size:20px;transition:all .2s;font-family:inherit;}
+.cam-effect-btn small{font-size:9px;color:#9c7aaa;font-family:inherit;}
+.cam-effect-btn.active{background:linear-gradient(135deg,#E91E63,#880E4F);border-color:#880E4F;box-shadow:0 3px 10px rgba(233,30,99,.35);}
+.cam-effect-btn.active small{color:#fff;}
+
+/* 카메라 뷰 */
+.cam-video-wrap{position:relative;border-radius:20px;overflow:hidden;aspect-ratio:3/4;box-shadow:0 8px 30px rgba(0,0,0,.2);border:3px solid #FFCDD2;background:#111;}
+#camVideo{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;}
+#camEffectCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:17px;}
+.cam-countdown-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;border-radius:17px;z-index:10;}
+.cam-countdown-num{font-size:100px;font-weight:900;color:white;text-shadow:0 0 40px #E91E63,0 0 80px #E91E63;animation:camCountPulse 1s ease-in-out;}
+@keyframes camCountPulse{0%{transform:scale(1.4);opacity:0}100%{transform:scale(1);opacity:1}}
+.cam-flash{position:absolute;inset:0;background:white;border-radius:17px;opacity:0;pointer-events:none;transition:opacity .1s;z-index:11;}
+
+/* 도트 */
+.cam-shot-dots{display:flex;gap:8px;justify-content:center;}
+.cam-dot{width:30px;height:30px;border-radius:50%;border:2px solid #FFCDD2;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;color:#ccc;font-weight:700;transition:all .3s;}
+.cam-dot.done{background:#E91E63;border-color:#880E4F;color:white;}
+.cam-dot.current{background:#FFCDD2;border-color:#E91E63;color:#E91E63;animation:camBlink 1s infinite;}
+@keyframes camBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* 셔터 */
+.cam-shutter-wrap{display:flex;align-items:center;justify-content:center;gap:24px;}
+.cam-shutter-btn{width:72px;height:72px;border-radius:50%;background:#E91E63;border:4px solid white;box-shadow:0 0 0 3px #E91E63,0 6px 20px rgba(233,30,99,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;transition:transform .15s;color:white;font-family:inherit;}
+.cam-shutter-btn:active{transform:scale(.92);}
+.cam-shutter-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+.cam-side-btn{width:46px;height:46px;border-radius:50%;background:#fff;border:2px solid #f3d0e5;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 4px 20px rgba(244,143,177,0.15);transition:transform .15s;font-family:inherit;}
+.cam-side-btn:active{transform:scale(.9);}
+
+/* 프리뷰 */
+.cam-preview-section{background:#fff;border-radius:16px;padding:14px;border:1px solid #f3d0e5;display:none;}
+.cam-preview-label{font-size:12px;font-weight:700;color:#9c7aaa;margin-bottom:10px;letter-spacing:1px;}
+.cam-preview-strip{display:flex;gap:6px;margin-bottom:12px;}
+.cam-preview-thumb{flex:1;aspect-ratio:3/4;border-radius:8px;background:#fff0f7;border:1px solid #f3d0e5;overflow:hidden;object-fit:cover;}
+.cam-action-btns{display:flex;gap:8px;}
+.cam-action-btn{flex:1;padding:11px 0;border-radius:12px;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.cam-btn-dl{background:#E91E63;color:white;box-shadow:0 4px 14px rgba(233,30,99,.3);}
+.cam-btn-print{background:#fff0f7;color:#880E4F;border:1px solid #FFCDD2;}
+.cam-btn-retry{background:#fff0f7;color:#9c7aaa;border:1px solid #f3d0e5;}
+
+/* 에러 카드 */
+.cam-error{background:#FFF3E0;border:2px solid #FFB74D;border-radius:14px;padding:20px;text-align:center;}
+.cam-error-icon{font-size:48px;margin-bottom:10px;}
+.cam-error-text{font-size:14px;font-weight:700;color:#E65100;margin-bottom:8px;}
+.cam-error-sub{font-size:12px;color:#BF360C;line-height:1.6;}
+.cam-error-btn{margin-top:12px;padding:10px 20px;background:#E91E63;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;}
+
+/* 인쇄 */
+@media print{
+  body>*:not(#camPrintArea){display:none!important;}
+  #camPrintArea{display:block!important;}
+  #camPrintArea img{width:100%;max-width:400px;}
+}
+
+/* 모바일 최적화 */
+@media (max-width:360px){
+  .cam-wrap{padding:8px;}
+  .cam-hero{padding:14px;}
+  .cam-hero-title{font-size:17px;}
+  .cam-shutter-btn{width:60px;height:60px;font-size:22px;}
+  .cam-side-btn{width:40px;height:40px;font-size:16px;}
+  .cam-effect-btn{width:44px;height:44px;font-size:17px;}
+}
+</style>
+</head>
+<body>
+
+<div class="cam-wrap">
+  <!-- 히어로 -->
+  <div class="cam-hero">
+    <div class="cam-hero-title">📷 우리끼리 찰칵</div>
+    <div class="cam-hero-sub">4컷 사진을 찍어 추억을 남겨요!</div>
+  </div>
+
+  <!-- 제작자 크레딧 -->
+  <div class="cam-credit">황성재(성포고등학교) · <a href="https://www.instagram.com/hirame.ki" target="_blank" rel="noopener">@hirame.ki</a></div>
+
+  <!-- 효과 선택 -->
+  <div class="cam-effect-bar">
+    <div class="cam-effect-label">✨ 효과 선택</div>
+    <div class="cam-effect-btns" id="effectBtns"></div>
+  </div>
+
+  <!-- 카메라 뷰 -->
+  <div class="cam-video-wrap" id="camVideoWrap">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <canvas id="camEffectCanvas"></canvas>
+    <div class="cam-countdown-overlay" id="camCountdown">
+      <div class="cam-countdown-num" id="camCountNum">3</div>
+    </div>
+    <div class="cam-flash" id="camFlash"></div>
+  </div>
+
+  <!-- 촬영 도트 -->
+  <div class="cam-shot-dots" id="camDots"></div>
+
+  <!-- 셔터 버튼 -->
+  <div class="cam-shutter-wrap">
+    <button class="cam-side-btn" id="camFlipBtn">🔄</button>
+    <button class="cam-shutter-btn" id="camShutterBtn">📸</button>
+    <button class="cam-side-btn" id="camEffectToggleBtn">🎨</button>
+  </div>
+
+  <!-- 프리뷰 섹션 -->
+  <div class="cam-preview-section" id="camPreviewSection">
+    <div class="cam-preview-label">📸 4컷 완성!</div>
+    <div class="cam-preview-strip" id="camPreviewStrip"></div>
+    <div class="cam-action-btns">
+      <button class="cam-action-btn cam-btn-dl" id="camDlBtn">⬇️ PNG 저장</button>
+      <button class="cam-action-btn cam-btn-print" id="camPrintBtn">🖨️ 인쇄</button>
+      <button class="cam-action-btn cam-btn-retry" id="camRetryBtn">🔄 다시찍기</button>
+    </div>
+  </div>
+
+  <!-- 숨겨진 캔버스 -->
+  <canvas id="camCaptureCanvas" style="display:none;"></canvas>
+  <canvas id="camStripCanvas" style="display:none;"></canvas>
+  <div id="camPrintArea" style="display:none;"></div>
+
+
+</div>
+
+<script>
+// =====================================================
+// 📷 우리끼리 찰칵 - 독립 카메라 페이지
+// Netlify / 정적 호스팅용 (GAS 의존성 완전 제거)
+// 기능: 4컷 촬영 + PNG 저장 + 인쇄
+// =====================================================
+
+var _camEffect = 'snow';
+var _camShotCount = 0;
+var _camMAX = 4;
+var _camImages = [];
+var _camShooting = false;
+var _camEffectOn = true;
+var _camFacing = 'user';
+var _camStream = null;
+var _camAnimId = null;
+var _camParticles = [];
+var _camGlitter = [];
+var _camMeteors = [];
+var _camNextMeteor = 0;
+var _camVideo, _camCtx, _camCanvas, _capCanvas, _stripCanvas;
+
+// ── 모션 감지 변수 ─────────────────────────
+var _motionCanvas = null;   // 오프스크린 캔버스 (80×60)
+var _motionCtx = null;
+var _motionPrev = null;     // 이전 프레임 픽셀 데이터
+var _motionPoints = [];     // 감지된 모션 좌표 목록
+var _motionVec = {x:0, y:0, speed:0}; // 모션 방향 벡터 (burst 강도용)
+var _motionCenter = null;
+var _lastBurstTime = 0;     // burst 쿨다운
+var _MOTION_W = 80;
+var _MOTION_H = 60;
+var _MOTION_THRESH = 18;
+
+// ── 효과 목록 ─────────────────────────────
+var EFFECTS = [
+  {id:'snow',icon:'❄️',lbl:'눈'},
+  {id:'petals',icon:'🌸',lbl:'벚꽃'},
+  {id:'confetti',icon:'🎊',lbl:'색종이'},
+  {id:'hearts',icon:'❤️',lbl:'하트'},
+  {id:'bubbles',icon:'🫧',lbl:'거품'},
+  {id:'leaves',icon:'🍂',lbl:'낙엽'},
+  {id:'glitter',icon:'✨',lbl:'글리터'},
+  {id:'meteor',icon:'🌠',lbl:'별똥별'},
+  {id:'none',icon:'🚫',lbl:'없음'}
+];
+
+// ── 초기화 ────────────────────────────────
+window.addEventListener('load', function() {
+  _camVideo = document.getElementById('camVideo');
+  _camCanvas = document.getElementById('camEffectCanvas');
+  _camCtx = _camCanvas.getContext('2d');
+  _capCanvas = document.getElementById('camCaptureCanvas');
+  _stripCanvas = document.getElementById('camStripCanvas');
+
+  // 효과 버튼 렌더
+  var eb = document.getElementById('effectBtns');
+  EFFECTS.forEach(function(e) {
+    var btn = document.createElement('button');
+    btn.className = 'cam-effect-btn' + (e.id===_camEffect?' active':'');
+    btn.setAttribute('data-ef', e.id);
+    btn.innerHTML = e.icon+'<small>'+e.lbl+'</small>';
+    btn.addEventListener('click', function(){ setCamEffect(e.id); });
+    eb.appendChild(btn);
+  });
+
+  // 촬영 도트 렌더
+  var dots = document.getElementById('camDots');
+  for(var i=0;i<_camMAX;i++){
+    var d = document.createElement('div');
+    d.className = 'cam-dot'+(i===0?' current':'');
+    d.id = 'camDot'+i;
+    d.textContent = i+1;
+    dots.appendChild(d);
+  }
+
+  // 이벤트 바인딩
+  document.getElementById('camShutterBtn').addEventListener('click', _camShoot);
+  document.getElementById('camFlipBtn').addEventListener('click', function(){
+    _camFacing = _camFacing==='user'?'environment':'user';
+    _camVideo.style.transform = _camFacing==='user'?'scaleX(-1)':'scaleX(1)';
+    _camStart();
+  });
+  document.getElementById('camEffectToggleBtn').addEventListener('click', function(){
+    _camEffectOn=!_camEffectOn;
+    this.textContent=_camEffectOn?'🎨':'⚫';
+  });
+  document.getElementById('camDlBtn').addEventListener('click', _camDownload);
+  document.getElementById('camPrintBtn').addEventListener('click', _camPrint);
+  document.getElementById('camRetryBtn').addEventListener('click', function(){ _camReset(false); });
+
+  // 모션 감지용 오프스크린 캔버스 초기화
+  _motionCanvas = document.createElement('canvas');
+  _motionCanvas.width = _MOTION_W;
+  _motionCanvas.height = _MOTION_H;
+  _motionCtx = _motionCanvas.getContext('2d', {willReadFrequently: true});
+
+  _camStart();
+  _camLoop();
+});
+
+function setCamEffect(id) {
+  _camEffect=id; _camParticles=[]; _camGlitter=[]; _camMeteors=[];
+  document.querySelectorAll('.cam-effect-btn').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-ef')===id);
+  });
+}
+
+// ── 카메라 시작 ────────────────────────────
+async function _camStart() {
+  if(_camStream){ _camStream.getTracks().forEach(function(t){t.stop();}); }
+
+  // 1단계: 선호 해상도로 시도
+  var constraints = [
+    {video:{facingMode:_camFacing,width:{ideal:1280},height:{ideal:720}},audio:false},
+    {video:{facingMode:_camFacing},audio:false},
+    {video:true,audio:false}
+  ];
+
+  for(var ci=0; ci<constraints.length; ci++){
+    try {
+      _camStream = await navigator.mediaDevices.getUserMedia(constraints[ci]);
+      _camVideo.srcObject = _camStream;
+      await _camVideo.play();
+      var wrap = document.getElementById('camVideoWrap');
+      if(wrap && _camCanvas){
+        _camCanvas.width = wrap.clientWidth;
+        _camCanvas.height = wrap.clientHeight;
+      }
+      console.log('📷 카메라 연결 성공 (시도 '+(ci+1)+')');
+      return; // 성공하면 즉시 리턴
+    } catch(e) {
+      console.warn('카메라 시도 '+(ci+1)+' 실패:', e.name, e.message);
+      if(ci < constraints.length-1) continue; // 다음 제약 조건으로 재시도
+
+      // 전부 실패: 에러 UI 표시
+      console.error('📷 카메라 접근 최종 실패:', e.name, e.message);
+      var wrap = document.getElementById('camVideoWrap');
+      if(wrap) {
+        var errMsg = '브라우저에서 카메라 권한을 허용해 주세요.<br>';
+        if(e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError'){
+          errMsg = '카메라 권한이 차단되었습니다.<br>' +
+            '주소창 왼쪽 🔒 아이콘 → 카메라 → <b>허용</b><br>' +
+            '설정 후 <b>새로고침</b>해 주세요.';
+        } else if(e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError'){
+          errMsg = '카메라 장치를 찾을 수 없습니다.<br>' +
+            '카메라가 연결되어 있는지 확인해 주세요.<br>' +
+            '다른 앱(Zoom 등)이 카메라를 사용 중이면 종료해 주세요.';
+        } else if(e.name === 'NotReadableError' || e.name === 'TrackStartError'){
+          errMsg = '카메라가 다른 프로그램에서 사용 중입니다.<br>' +
+            'Zoom, Teams, OBS 등을 종료 후 다시 시도해 주세요.';
+        } else if(e.name === 'OverconstrainedError'){
+          errMsg = '카메라 설정을 지원하지 않습니다.<br>다시 시도해 주세요.';
+        }
+        wrap.innerHTML =
+          '<div class="cam-error">' +
+            '<div class="cam-error-icon">📷</div>' +
+            '<div class="cam-error-text">카메라에 접근할 수 없어요</div>' +
+            '<div class="cam-error-sub">' + errMsg + '<br><br>' +
+              '<span style="font-size:11px;color:#999;">오류: ' + e.name + '</span>' +
+            '</div>' +
+            '<button class="cam-error-btn" onclick="location.reload()">🔄 다시 시도</button>' +
+          '</div>';
+      }
+    }
+  }
+}
+
+// ── 파티클 스폰 ────────────────────────────
+// 모션 좌표 샘플링
+function _camMotionPos(W,H,fallbackX,fallbackY){
+  if(_motionPoints.length>3){
+    var pt=_motionPoints[Math.floor(Math.random()*_motionPoints.length)];
+    return {x:pt.x,y:pt.y};
+  }
+  return {x:fallbackX!==undefined?fallbackX:Math.random()*W, y:fallbackY!==undefined?fallbackY:Math.random()*H};
+}
+
+function _camSpawn() {
+  if(!_camCanvas) return;
+  var W=_camCanvas.width, H=_camCanvas.height;
+  if(_camEffect==='snow'&&_camParticles.filter(function(p){return p.t==='snow';}).length<80){if(Math.random()<0.4)_camParticles.push({t:'snow',x:Math.random()*W,y:-10,r:(Math.random()*5+3)*0.5,sp:(Math.random()*0.8+0.4)*0.5,dr:Math.random()*0.6-0.3,da:Math.random()*Math.PI*2,al:Math.random()*0.5+0.5});}
+  if(_camEffect==='petals'&&_camParticles.filter(function(p){return p.t==='petal';}).length<50){if(Math.random()<0.3)_camParticles.push({t:'petal',x:Math.random()*W,y:-10,w:(Math.random()*10+6)*0.5,h:(Math.random()*5+3)*0.5,sp:(Math.random()*0.6+0.3)*0.5,rot:Math.random()*Math.PI*2,rs:(Math.random()-0.5)*0.04,dr:(Math.random()-0.5)*1.5,sa:Math.random()*Math.PI*2,al:Math.random()*0.4+0.5});}
+  if(_camEffect==='confetti'&&_camParticles.filter(function(p){return p.t==='conf';}).length<120){var cols=['#E91E63','#FF9800','#4CAF50','#2196F3','#9C27B0','#FFD700'];if(Math.random()<0.6)_camParticles.push({t:'conf',x:Math.random()*W,y:-10,w:(Math.random()*8+4)*0.5,h:(Math.random()*5+3)*0.5,col:cols[Math.floor(Math.random()*cols.length)],sp:(Math.random()*2+1)*0.5,vx:(Math.random()-0.5)*1.5,rot:Math.random()*Math.PI*2,rs:(Math.random()-0.5)*0.15,gv:0.025});}
+  if(_camEffect==='hearts'&&_camParticles.filter(function(p){return p.t==='heart';}).length<35){if(Math.random()<0.15)_camParticles.push({t:'heart',x:Math.random()*W,y:H+10,sz:(Math.random()*16+8)*0.5,col:Math.random()>0.5?'#E91E63':'#FF80AB',sp:(Math.random()*0.9+0.5)*0.5,vx:(Math.random()-0.5)*0.4,al:1,fs:Math.random()*0.004+0.002});}
+  if(_camEffect==='bubbles'&&_camParticles.filter(function(p){return p.t==='bbl';}).length<40){if(Math.random()<0.15)_camParticles.push({t:'bbl',x:Math.random()*W,y:H+10,r:(Math.random()*22+8)*0.5,sp:(Math.random()*0.8+0.4)*0.5,dr:Math.random()*0.4-0.2,da:Math.random()*Math.PI*2,al:Math.random()*0.35+0.2});}
+  if(_camEffect==='leaves'&&_camParticles.filter(function(p){return p.t==='leaf';}).length<40){var lc=['#D84315','#E65100','#F57F17','#BF360C','#8D6E63'];if(Math.random()<0.2)_camParticles.push({t:'leaf',x:Math.random()*W,y:-10,sz:(Math.random()*10+7)*0.5,col:lc[Math.floor(Math.random()*lc.length)],sp:(Math.random()*0.7+0.3)*0.5,rot:Math.random()*Math.PI*2,rs:(Math.random()-0.5)*0.06,sa:Math.random()*Math.PI*2,ss:Math.random()*0.02+0.01,sw:(Math.random()*3+2)*0.5});}
+  if(_camEffect==='glitter'&&_camGlitter.length<30){var gc=['#FFD700','#FFF','#FF80AB','#80D8FF','#CCFF90'];_camGlitter.push({x:Math.random()*W,y:Math.random()*H,sz:(Math.random()*10+4)*0.5,al:0,grow:true,sp:(Math.random()*0.04+0.02)*0.5,col:gc[Math.floor(Math.random()*gc.length)],life:0,max:Math.random()*60+30});}
+  if(_camEffect==='meteor'){var now=Date.now();if(now>_camNextMeteor&&_camMeteors.length<12){_camMeteors.push({x:-60,y:Math.random()*H*0.7,vx:(Math.random()*8+5)*0.5,vy:(Math.random()*4+2)*0.5,al:1,trail:[]});_camNextMeteor=now+Math.random()*300+100;}}
+}
+
+// ── 파티클 업데이트 ────────────────────────
+function _camUpdate() {
+  if(!_camCanvas) return;
+  var W=_camCanvas.width, H=_camCanvas.height;
+
+  _camParticles=_camParticles.filter(function(p){
+    // burst 초기속도 감쇠 후 자연 방향으로 전환
+    if(p.burst){
+      if(Math.abs(p.wvx)>0.05){p.wvx*=0.88;p.x+=p.wvx;}else{p.wvx=0;}
+      if(Math.abs(p.wvy)>0.05){p.wvy*=0.88;p.y+=p.wvy;}else{p.wvy=0;}
+      if(p.wvx===0&&p.wvy===0){p.burst=false;}
+    }
+    if(p.t==='snow'){p.da+=0.02;p.x+=Math.sin(p.da)*p.dr;p.y+=p.sp;return p.y<H+40&&p.x>-100&&p.x<W+100;}
+    if(p.t==='petal'){p.sa+=0.02;p.x+=Math.sin(p.sa)*p.dr+p.dr;p.y+=p.sp;p.rot+=p.rs;return p.y<H+40&&p.x>-100&&p.x<W+100;}
+    if(p.t==='conf'){p.x+=p.vx;p.y+=p.sp;p.sp+=p.gv;p.rot+=p.rs;return p.y<H+40&&p.x>-100&&p.x<W+100;}
+    if(p.t==='heart'){p.x+=p.vx;p.y-=p.sp;p.al-=p.fs;return p.al>0&&p.y>-p.sz*2&&p.x>-100&&p.x<W+100;}
+    if(p.t==='bbl'){p.da+=0.02;p.x+=Math.sin(p.da)*p.dr;p.y-=p.sp;return p.y>-p.r*2&&p.x>-100&&p.x<W+100;}
+    if(p.t==='leaf'){p.sa+=p.ss;p.x+=Math.sin(p.sa)*p.sw;p.y+=p.sp;p.rot+=p.rs;return p.y<H+40&&p.x>-100&&p.x<W+100;}
+    return true;
+  });
+  _camGlitter=_camGlitter.filter(function(g){
+    // 글리터 burst 이동
+    if(g.wvx!==undefined){
+      if(Math.abs(g.wvx)>0.05){g.wvx*=0.88;g.x+=g.wvx;}else{g.wvx=0;}
+      if(Math.abs(g.wvy)>0.05){g.wvy*=0.88;g.y+=g.wvy;}else{g.wvy=0;}
+    }
+    g.life++;if(g.grow){g.al+=g.sp;if(g.al>=1){g.al=1;g.grow=false;}}else{g.al-=g.sp;}return g.al>0&&g.life<g.max*2;});
+  _camMeteors=_camMeteors.filter(function(m){m.trail.push({x:m.x,y:m.y});if(m.trail.length>18)m.trail.shift();m.x+=m.vx;m.y+=m.vy;m.al=Math.max(0,1-(m.x/((_camCanvas?_camCanvas.width:300)+200)));return m.x<(_camCanvas?_camCanvas.width:300)+100&&m.y<H+100;});
+}
+
+// ── 파티클 그리기 ──────────────────────────
+function _camDraw() {
+  if(!_camCtx||!_camCanvas) return;
+  _camCtx.clearRect(0,0,_camCanvas.width,_camCanvas.height);
+  if(!_camEffectOn||_camEffect==='none') return;
+  _camParticles.forEach(function(p){
+    _camCtx.save();
+    if(p.t==='snow'){_camCtx.globalAlpha=p.al;_camCtx.fillStyle='white';_camCtx.shadowColor='rgba(200,230,255,0.8)';_camCtx.shadowBlur=6;_camCtx.beginPath();_camCtx.arc(p.x,p.y,p.r,0,Math.PI*2);_camCtx.fill();}
+    else if(p.t==='petal'){_camCtx.globalAlpha=p.al;_camCtx.translate(p.x,p.y);_camCtx.rotate(p.rot);_camCtx.fillStyle='#FFB7C5';_camCtx.shadowColor='rgba(255,100,150,0.4)';_camCtx.shadowBlur=4;_camCtx.beginPath();_camCtx.ellipse(0,0,p.w/2,p.h/2,0,0,Math.PI*2);_camCtx.fill();}
+    else if(p.t==='conf'){_camCtx.globalAlpha=0.85;_camCtx.translate(p.x,p.y);_camCtx.rotate(p.rot);_camCtx.fillStyle=p.col;_camCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h);}
+    else if(p.t==='heart'){_camCtx.globalAlpha=p.al;_camCtx.translate(p.x,p.y);_camCtx.fillStyle=p.col;_camCtx.shadowColor=p.col;_camCtx.shadowBlur=10;var s=p.sz/10;_camCtx.beginPath();_camCtx.moveTo(0,-3*s);_camCtx.bezierCurveTo(5*s,-8*s,10*s,-3*s,0,3*s);_camCtx.bezierCurveTo(-10*s,-3*s,-5*s,-8*s,0,-3*s);_camCtx.fill();}
+    else if(p.t==='bbl'){_camCtx.globalAlpha=p.al;var bg=_camCtx.createRadialGradient(p.x-p.r*0.3,p.y-p.r*0.3,p.r*0.1,p.x,p.y,p.r);bg.addColorStop(0,'rgba(255,255,255,0.8)');bg.addColorStop(1,'rgba(100,180,255,0.15)');_camCtx.fillStyle=bg;_camCtx.strokeStyle='rgba(150,220,255,0.5)';_camCtx.lineWidth=1.5;_camCtx.beginPath();_camCtx.arc(p.x,p.y,p.r,0,Math.PI*2);_camCtx.fill();_camCtx.stroke();}
+    else if(p.t==='leaf'){_camCtx.globalAlpha=0.85;_camCtx.translate(p.x,p.y);_camCtx.rotate(p.rot);_camCtx.fillStyle=p.col;_camCtx.beginPath();_camCtx.moveTo(0,-p.sz);_camCtx.bezierCurveTo(p.sz*0.8,-p.sz*0.5,p.sz*0.8,p.sz*0.5,0,p.sz);_camCtx.bezierCurveTo(-p.sz*0.8,p.sz*0.5,-p.sz*0.8,-p.sz*0.5,0,-p.sz);_camCtx.fill();}
+    _camCtx.restore();
+  });
+  _camGlitter.forEach(function(g){_camCtx.save();_camCtx.globalAlpha=g.al*0.9;_camCtx.translate(g.x,g.y);_camCtx.fillStyle=g.col;_camCtx.shadowColor=g.col;_camCtx.shadowBlur=12;for(var i=0;i<4;i++){_camCtx.save();_camCtx.rotate(i*Math.PI/2);_camCtx.beginPath();_camCtx.ellipse(0,-g.sz*0.5,g.sz*0.1,g.sz*0.55,0,0,Math.PI*2);_camCtx.fill();_camCtx.restore();}for(var j=0;j<4;j++){_camCtx.save();_camCtx.rotate(j*Math.PI/2+Math.PI/4);_camCtx.beginPath();_camCtx.ellipse(0,-g.sz*0.35,g.sz*0.08,g.sz*0.38,0,0,Math.PI*2);_camCtx.fill();_camCtx.restore();}_camCtx.restore();});
+  _camMeteors.forEach(function(m){if(m.trail.length<2)return;_camCtx.save();for(var i=1;i<m.trail.length;i++){var t=i/m.trail.length;_camCtx.globalAlpha=t*m.al*0.9;_camCtx.strokeStyle='rgba(255,255,200,'+t+')';_camCtx.lineWidth=t*3+0.5;_camCtx.shadowColor='rgba(255,255,150,0.8)';_camCtx.shadowBlur=8;_camCtx.beginPath();_camCtx.moveTo(m.trail[i-1].x,m.trail[i-1].y);_camCtx.lineTo(m.trail[i].x,m.trail[i].y);_camCtx.stroke();}_camCtx.globalAlpha=m.al;_camCtx.fillStyle='white';_camCtx.shadowColor='rgba(255,255,150,1)';_camCtx.shadowBlur=16;_camCtx.beginPath();_camCtx.arc(m.x,m.y,2.5,0,Math.PI*2);_camCtx.fill();_camCtx.restore();});
+}
+
+// ── 모션 감지 ─────────────────────────────
+function _camDetectMotion() {
+  if(!_motionCtx||!_camVideo||_camVideo.readyState<2) return;
+  var CW=_camCanvas?_camCanvas.width:300, CH=_camCanvas?_camCanvas.height:400;
+
+  _motionCtx.save();
+  if(_camFacing==='user'){_motionCtx.scale(-1,1);_motionCtx.translate(-_MOTION_W,0);}
+  _motionCtx.drawImage(_camVideo,0,0,_MOTION_W,_MOTION_H);
+  _motionCtx.restore();
+
+  var curr=_motionCtx.getImageData(0,0,_MOTION_W,_MOTION_H).data;
+  _motionPoints=[];
+
+  if(_motionPrev){
+    for(var i=0;i<curr.length;i+=4){
+      var dr=Math.abs(curr[i]-_motionPrev[i]);
+      var dg=Math.abs(curr[i+1]-_motionPrev[i+1]);
+      var db=Math.abs(curr[i+2]-_motionPrev[i+2]);
+      if((dr+dg+db)/3>_MOTION_THRESH){
+        var px=((i/4)%_MOTION_W)/_MOTION_W*CW;
+        var py=Math.floor((i/4)/_MOTION_W)/_MOTION_H*CH;
+        _motionPoints.push({x:px,y:py});
+      }
+    }
+  }
+
+  // 모션 포인트가 충분하면 burst 발생
+  if(_motionPoints.length>5){
+    var cx=0,cy=0;
+    for(var j=0;j<_motionPoints.length;j++){cx+=_motionPoints[j].x;cy+=_motionPoints[j].y;}
+    cx/=_motionPoints.length; cy/=_motionPoints.length;
+
+    var now=Date.now();
+    var intensity=Math.min(_motionPoints.length/20,1); // 0~1
+    if(now-_lastBurstTime>80){ // 80ms 쿨다운 (너무 자주 안 터지게)
+      _camBurst(cx,cy,intensity);
+      _lastBurstTime=now;
+    }
+    _motionCenter={x:cx,y:cy};
+  } else {
+    _motionCenter=null;
+  }
+
+  _motionPrev=new Uint8ClampedArray(curr);
+}
+
+// ── 폭발 효과 ─────────────────────────────
+function _camBurst(cx,cy,intensity){
+  if(!_camCanvas||!_camEffectOn||_camEffect==='none') return;
+  var count=Math.floor(8+intensity*18); // 8~26개 한꺼번에 폭발
+  for(var i=0;i<count;i++){
+    var angle=Math.random()*Math.PI*2;         // 사방으로
+    var power=(2+Math.random()*5)*intensity*(0.7+Math.random()*0.6); // 터지는 힘
+    var vx=Math.cos(angle)*power;
+    var vy=Math.sin(angle)*power;
+    var ef=_camEffect;
+    if(ef==='snow'){
+      // 눈: 폭발 후 아래로 낙하
+      _camParticles.push({t:'snow',x:cx,y:cy,r:(Math.random()*5+3)*0.5,
+        sp:Math.random()*0.8+0.4,dr:Math.random()*0.6-0.3,da:Math.random()*Math.PI*2,
+        al:Math.random()*0.5+0.5,wvx:vx,wvy:vy,burst:true});
+    } else if(ef==='petals'){
+      // 벚꽃: 폭발 후 아래로 떨어지며 흔들림
+      _camParticles.push({t:'petal',x:cx,y:cy,w:(Math.random()*10+6)*0.5,h:(Math.random()*5+3)*0.5,
+        sp:Math.random()*0.6+0.3,rot:Math.random()*Math.PI*2,rs:(Math.random()-0.5)*0.1,
+        dr:(Math.random()-0.5)*1.5,sa:Math.random()*Math.PI*2,al:Math.random()*0.4+0.6,wvx:vx,wvy:vy,burst:true});
+    } else if(ef==='confetti'){
+      // 색종이: 폭발 후 중력받아 낙하
+      var cols=['#E91E63','#FF9800','#4CAF50','#2196F3','#9C27B0','#FFD700'];
+      _camParticles.push({t:'conf',x:cx,y:cy,w:(Math.random()*8+4)*0.5,h:(Math.random()*5+3)*0.5,
+        col:cols[Math.floor(Math.random()*cols.length)],
+        sp:Math.random()*1+0.5,vx:(Math.random()-0.5)*1.5,rot:Math.random()*Math.PI*2,
+        rs:(Math.random()-0.5)*0.2,gv:0.04,wvx:vx,wvy:vy,burst:true});
+    } else if(ef==='hearts'){
+      // 하트: 폭발 후 위로 상승하며 사라짐
+      _camParticles.push({t:'heart',x:cx,y:cy,sz:(Math.random()*16+8)*0.5,
+        col:Math.random()>0.5?'#E91E63':'#FF80AB',
+        sp:Math.random()*0.9+0.5,vx:(Math.random()-0.5)*0.4,al:1,
+        fs:Math.random()*0.003+0.002,wvx:vx,wvy:vy,burst:true});
+    } else if(ef==='bubbles'){
+      // 거품: 폭발 후 위로 떠오름
+      _camParticles.push({t:'bbl',x:cx,y:cy,r:(Math.random()*22+8)*0.5,
+        sp:Math.random()*0.8+0.4,dr:Math.random()*0.4-0.2,da:Math.random()*Math.PI*2,
+        al:Math.random()*0.35+0.3,wvx:vx,wvy:vy,burst:true});
+    } else if(ef==='leaves'){
+      // 낙엽: 폭발 후 아래로 흔들리며 낙하
+      var lc=['#D84315','#E65100','#F57F17','#BF360C','#8D6E63'];
+      _camParticles.push({t:'leaf',x:cx,y:cy,sz:(Math.random()*10+7)*0.5,
+        col:lc[Math.floor(Math.random()*lc.length)],
+        sp:Math.random()*0.7+0.3,rot:Math.random()*Math.PI*2,rs:(Math.random()-0.5)*0.12,
+        sa:Math.random()*Math.PI*2,ss:Math.random()*0.02+0.01,sw:(Math.random()*3+2)*0.5,
+        wvx:vx,wvy:vy,burst:true});
+    } else if(ef==='glitter'){
+      var gc=['#FFD700','#FFF','#FF80AB','#80D8FF','#CCFF90'];
+      _camGlitter.push({x:cx+(Math.random()-0.5)*40,y:cy+(Math.random()-0.5)*40,
+        sz:(Math.random()*14+6)*0.5,al:0,grow:true,sp:0.06,
+        col:gc[Math.floor(Math.random()*gc.length)],life:0,max:Math.random()*30+20,
+        vx:vx*0.3,vy:vy*0.3,wvx:vx,wvy:vy});
+    }
+  }
+}
+
+function _camLoop() { _camDetectMotion(); _camSpawn(); _camUpdate(); _camDraw(); _camAnimId=requestAnimationFrame(_camLoop); }
+
+// ── 촬영 도트 업데이트 ────────────────────
+function _camUpdateDots() {
+  for(var i=0;i<_camMAX;i++){
+    var d=document.getElementById('camDot'+i);
+    if(!d)continue;
+    d.className='cam-dot'+(i<_camShotCount?' done':i===_camShotCount?' current':'');
+  }
+}
+
+function _camFlashFx() {
+  var fl=document.getElementById('camFlash');
+  if(!fl)return;
+  fl.style.opacity='1';
+  setTimeout(function(){fl.style.opacity='0';},120);
+}
+
+// ── 프레임 캡쳐 ───────────────────────────
+async function _camCapture() {
+  _capCanvas.width=_camVideo.videoWidth||_camCanvas.width;
+  _capCanvas.height=_camVideo.videoHeight||_camCanvas.height;
+  var cctx=_capCanvas.getContext('2d');
+  cctx.save();
+  if(_camFacing==='user'){cctx.scale(-1,1);cctx.translate(-_capCanvas.width,0);}
+  cctx.drawImage(_camVideo,0,0,_capCanvas.width,_capCanvas.height);
+  cctx.restore();
+  cctx.drawImage(_camCanvas,0,0,_capCanvas.width,_capCanvas.height);
+  return _capCanvas.toDataURL('image/png');
+}
+
+// ── 촬영 ─────────────────────────────────
+async function _camShoot() {
+  if(_camShooting||_camShotCount>=_camMAX) return;
+  _camShooting=true;
+  var sb=document.getElementById('camShutterBtn'); if(sb) sb.disabled=true;
+  var ov=document.getElementById('camCountdown');
+  var ne=document.getElementById('camCountNum');
+  if(ov) ov.style.display='flex';
+  for(var i=3;i>=1;i--){
+    if(ne){ne.textContent=i;ne.style.animation='none';void ne.offsetWidth;ne.style.animation='camCountPulse 1s ease-in-out';}
+    await new Promise(function(r){setTimeout(r,1000);});
+  }
+  if(ov) ov.style.display='none';
+  _camFlashFx();
+  var img=await _camCapture();
+  _camImages.push(img); _camShotCount++; _camUpdateDots();
+  _camShooting=false; if(sb) sb.disabled=false;
+  if(_camShotCount>=_camMAX){ await new Promise(function(r){setTimeout(r,300);}); _camBuildStrip(); }
+}
+
+// ── 4컷 스트립 빌드 ──────────────────────
+function _camBuildStrip() {
+  var FW=400,FH=533,PAD=12,TOP=0,BOT=12;
+  var W=FW+PAD*2, H=FH*4+PAD*5+TOP+BOT;
+  _stripCanvas.width=W; _stripCanvas.height=H;
+  var sctx=_stripCanvas.getContext('2d');
+  sctx.fillStyle='#FFF8F0'; sctx.fillRect(0,0,W,H);
+  var loaded=0;
+  _camImages.forEach(function(src,i){
+    var img=new Image(); img.onload=function(){
+      var y=TOP+PAD+i*(FH+PAD);
+      sctx.save();
+      if(sctx.roundRect){ sctx.beginPath();sctx.roundRect(PAD,y,FW,FH,10);sctx.clip(); }
+      sctx.drawImage(img,PAD,y,FW,FH);
+      sctx.restore();
+      loaded++;
+      if(loaded===4){
+        _camShowPreview();
+      }
+    }; img.src=src;
+  });
+}
+
+// ── 프리뷰 표시 ───────────────────────────
+function _camShowPreview() {
+  var sec=document.getElementById('camPreviewSection');
+  var strip=document.getElementById('camPreviewStrip');
+  if(!sec||!strip) return;
+  strip.innerHTML='';
+  _camImages.forEach(function(src){
+    var img=document.createElement('img');
+    img.src=src;
+    img.className='cam-preview-thumb';
+    strip.appendChild(img);
+  });
+  sec.style.display='block';
+  sec.scrollIntoView({behavior:'smooth',block:'nearest'});
+  var sb=document.getElementById('camShutterBtn'); if(sb) sb.disabled=true;
+}
+
+// ── PNG 다운로드 ──────────────────────────
+function _camDownload() {
+  var a=document.createElement('a');
+  a.href=_stripCanvas.toDataURL('image/png');
+  a.download='우리끼리찰칵_'+Date.now()+'.png';
+  a.click();
+}
+
+// ── 인쇄 ─────────────────────────────────
+function _camPrint() {
+  var area=document.getElementById('camPrintArea');
+  var img=document.createElement('img');
+  img.src=_stripCanvas.toDataURL('image/png');
+  img.style.cssText='width:100%;max-width:400px;display:block;margin:0 auto;';
+  area.innerHTML=''; area.appendChild(img); area.style.display='block';
+  window.print();
+  area.style.display='none';
+}
+
+// ── 다시찍기 ─────────────────────────────
+function _camReset(keepStream) {
+  _camShotCount=0; _camImages.length=0; _camParticles=[]; _camGlitter=[]; _camMeteors=[];
+  _camUpdateDots();
+  var sec=document.getElementById('camPreviewSection'); if(sec) sec.style.display='none';
+  var sb=document.getElementById('camShutterBtn'); if(sb) sb.disabled=false;
+  if(!keepStream) _camStart();
+}
+</script>
+</body>
+</html>
