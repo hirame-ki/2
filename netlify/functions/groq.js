@@ -1,40 +1,59 @@
 exports.handler = async function (event) {
-  // POST 요청만 허용
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+  // CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: corsHeaders(),
+    };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_API_KEY) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: { message: "서버에 API 키가 설정되지 않았습니다. Netlify 환경변수를 확인해주세요." } }),
+      headers: corsHeaders(),
+      body: JSON.stringify({ error: { message: 'API 키가 서버에 설정되지 않았습니다.' } }),
     };
   }
 
-  try {
-    const body = JSON.parse(event.body);
+  // path 파라미터로 endpoint 결정 (기본값: chat/completions)
+  const path = event.queryStringParameters?.path || 'chat/completions';
+  const GROQ_URL = `https://api.groq.com/openai/v1/${path}`;
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
+  try {
+    const response = await fetch(GROQ_URL, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${GROQ_API_KEY}`,
       },
-      body: JSON.stringify(body),
+      body: event.body,
     });
 
     const data = await response.json();
-
     return {
       statusCode: response.status,
-      headers: { "Content-Type": "application/json" },
+      headers: corsHeaders(),
       body: JSON.stringify(data),
     };
   } catch (err) {
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: { message: "서버 오류: " + err.message } }),
+      statusCode: 502,
+      headers: corsHeaders(),
+      body: JSON.stringify({ error: { message: `프록시 오류: ${err.message}` } }),
     };
   }
 };
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+}
