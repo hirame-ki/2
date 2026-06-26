@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>H-Factory v1.8.0 — 교사전용 바탕화면 위젯</title>
+<title>SsamBoard v2.3.1 — 교사전용 바탕화면 위젯</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='white'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%230a0a0a'%3EH%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -163,10 +163,10 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
   <canvas id="shader-canvas"></canvas>
   <div class="hero-vignette"></div>
   <div class="hero-grain"></div>
-  <div class="hero-ghost">H</div>
+  <div class="hero-ghost">S</div>
   <div class="hero-body">
-    <div class="eyebrow">교사전용 Windows 바탕화면 위젯 · 무료 · v1.8.0</div>
-    <div class="hero-mark">H&#8209;<em>F</em>actory</div>
+    <div class="eyebrow">교사전용 Windows 바탕화면 위젯 · 무료 · v2.3.1</div>
+    <div class="hero-mark">Ssam&#8209;<em>B</em>oard</div>
     <div class="hero-sub">Desktop Widget App for Teachers</div>
     <div class="hero-desc">
       수업, 급식, 시간표, 날씨, 할 일까지.<br>
@@ -211,13 +211,13 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="feat-num">Feature 03</div>
       <span class="feat-icon">🎲</span>
       <div class="feat-name">수업 도구 모음</div>
-      <div class="feat-desc">무작위 추첨, 타이머, 사다리타기, 룰렛, QR코드, 뽀모도로까지. 수업 진행에 필요한 도구를 한곳에서.</div>
+      <div class="feat-desc">무작위 추첨, 타이머, 사다리타기, 룰렛, QR코드, 소음측정기까지. 수업 진행에 필요한 도구를 한곳에서.</div>
     </div>
     <div class="feat-item">
       <div class="feat-num">Feature 04</div>
       <span class="feat-icon">🗂️</span>
       <div class="feat-name">업무도구 모음</div>
-      <div class="feat-desc">상담 일지, 진도 체크, 성적 분석, 수업자료 생성까지. 학급 담임 교사의 핵심 업무를 별도 창에서 깊이 있게 관리할 수 있습니다. 성적 분석은 1차 정기고사 일람표로 가상 등급 산출도 지원합니다.</div>
+      <div class="feat-desc">상담 일지, 진도 체크, 성적 분석, 공문서 도우미, 생기부 초안 생성까지. 교사의 핵심 업무를 AI로 빠르게 처리할 수 있는 총 10가지 도구를 별도 창에서 사용합니다.</div>
     </div>
   </div>
 </section>
@@ -225,11 +225,12 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
 <!-- ── WIDGET LIST ── -->
 <section class="widgets">
   <div class="wid-head">
-    <div class="wid-label">19 Widgets</div>
-    <div class="wid-title">총 <em>19가지</em> 위젯</div>
+    <div class="wid-label">21 Widgets</div>
+    <div class="wid-title">총 <em>21가지</em> 위젯</div>
   </div>
   <div class="wid-grid">
-    <div class="wid-item"><span class="wid-emoji">🕐</span><div class="wid-info"><div class="wid-name">시계</div><div class="wid-sub">현재 시각·날짜·요일 표시</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🕐</span><div class="wid-info"><div class="wid-name">디지털 시계</div><div class="wid-sub">현재 시각·날짜·요일 표시</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🕰️</span><div class="wid-info"><div class="wid-name">아날로그 시계</div><div class="wid-sub">초침이 있는 아날로그 방식 시계</div></div></div>
     <div class="wid-item"><span class="wid-emoji">📅</span><div class="wid-info"><div class="wid-name">시간표</div><div class="wid-sub">주간 시간표, 현재 교시 강조</div></div></div>
     <div class="wid-item"><span class="wid-emoji">⏱️</span><div class="wid-info"><div class="wid-name">교시 타이머</div><div class="wid-sub">남은 시간 카운트다운, 주말 휴일 표시</div></div></div>
     <div class="wid-item"><span class="wid-emoji">🍱</span><div class="wid-info"><div class="wid-name">급식</div><div class="wid-sub">NEIS 자동 연동, 날짜 이동</div></div></div>
@@ -237,17 +238,18 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
     <div class="wid-item"><span class="wid-emoji">📝</span><div class="wid-info"><div class="wid-name">메모</div><div class="wid-sub">자유 텍스트 자동 저장</div></div></div>
     <div class="wid-item"><span class="wid-emoji">📅</span><div class="wid-info"><div class="wid-name">D-DAY</div><div class="wid-sub">여러 날짜 등록·자동 카운트·드래그 순서 변경</div></div></div>
     <div class="wid-item"><span class="wid-emoji">🔗</span><div class="wid-info"><div class="wid-name">바로가기</div><div class="wid-sub">URL·파일·폴더 즉시 실행·한글 경로 지원</div></div></div>
-    <div class="wid-item"><span class="wid-emoji">🎲</span><div class="wid-info"><div class="wid-name">수업도구</div><div class="wid-sub">추첨·타이머·사다리·룰렛·QR</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🎲</span><div class="wid-info"><div class="wid-name">수업도구</div><div class="wid-sub">추첨·타이머·사다리·룰렛·QR·소음측정기</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🗂️</span><div class="wid-info"><div class="wid-name">업무도구</div><div class="wid-sub">상담·진도·성적·수행채점·이벤트·수업자료·문제변형·공문서·생기부·평가계획</div></div></div>
     <div class="wid-item"><span class="wid-emoji">📋</span><div class="wid-info"><div class="wid-name">명렬표</div><div class="wid-sub">반별 출결 체크·메모</div></div></div>
     <div class="wid-item"><span class="wid-emoji">📅</span><div class="wid-info"><div class="wid-name">학사일정</div><div class="wid-sub">월간 달력 + NEIS 연동</div></div></div>
     <div class="wid-item"><span class="wid-emoji">🌤️</span><div class="wid-info"><div class="wid-name">날씨</div><div class="wid-sub">API 키 불필요, 30분 갱신</div></div></div>
     <div class="wid-item"><span class="wid-emoji">📊</span><div class="wid-info"><div class="wid-name">학급통계</div><div class="wid-sub">월별 출결 현황 바차트</div></div></div>
     <div class="wid-item"><span class="wid-emoji">📌</span><div class="wid-info"><div class="wid-name">포스트잇</div><div class="wid-sub">5색상, 자동 저장</div></div></div>
     <div class="wid-item"><span class="wid-emoji">🔔</span><div class="wid-info"><div class="wid-name">커스텀 알림</div><div class="wid-sub">시간·메시지 등록 팝업</div></div></div>
-    <div class="wid-item"><span class="wid-emoji">🖥️</span><div class="wid-info"><div class="wid-name">시스템 제어</div><div class="wid-sub">볼륨·밝기·와이파이 슬라이더</div></div></div>
     <div class="wid-item"><span class="wid-emoji">✨</span><div class="wid-info"><div class="wid-name">명패</div><div class="wid-sub">무지개·반짝임·웨이브·글로우·파이어</div></div></div>
-    <div class="wid-item"><span class="wid-emoji">🗂️</span><div class="wid-info"><div class="wid-name">업무도구</div><div class="wid-sub">상담·진도·성적분석·성적산출·이벤트플래너·수업자료생성</div></div></div>
-    <div class="wid-item" style="position:relative;"><span class="wid-emoji">🎯</span><div class="wid-info"><div class="wid-name">오늘의 미션 <span style="font-size:9px;background:#34C759;color:#fff;border-radius:5px;padding:1px 6px;vertical-align:middle;font-weight:700;margin-left:4px">NEW</span></div><div class="wid-sub">교사·학생 오늘의 도전 미션 매일 자동 선택</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🖥️</span><div class="wid-info"><div class="wid-name">시스템 제어</div><div class="wid-sub">볼륨·밝기·와이파이 슬라이더</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🏫</span><div class="wid-info"><div class="wid-name">학급 시간표</div><div class="wid-sub">담임 학급의 시간표를 요일별로 표시</div></div></div>
+    <div class="wid-item"><span class="wid-emoji">🎯</span><div class="wid-info"><div class="wid-name">오늘의 미션</div><div class="wid-sub">교사·학생 오늘의 도전 미션 매일 자동 선택</div></div></div>
   </div>
 </section>
 
@@ -268,7 +270,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="ht-snum">Step 02</div>
       <span class="ht-sicon">📦</span>
       <div class="ht-sname">.exe 파일 다운로드</div>
-      <div class="ht-sdesc">페이지 하단 <b>Assets</b> 목록에서 <b>H-Factory.Setup.x.x.x.exe</b> 파일만 클릭하여 받으세요. 다른 파일(.blockmap, .yml 등)은 필요 없습니다.</div>
+      <div class="ht-sdesc">페이지 하단 <b>Assets</b> 목록에서 <b>SsamBoard.Setup.x.x.x.exe</b> 파일만 클릭하여 받으세요. 다른 파일(.blockmap, .yml 등)은 필요 없습니다.</div>
     </div>
     <div class="ht-step">
       <div class="ht-snum">Step 03</div>
@@ -290,7 +292,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
         <b>파일이 "확인되지 않음 XXXXXX.crdownload"로 저장되나요?</b><br>
         Chrome/Edge 브라우저가 .exe 파일을 위험하다고 판단해 차단한 것입니다. 실제 악성 소프트웨어가 아니니 안심하세요. 아래 세 가지 방법 중 하나로 해결할 수 있습니다.<br><br>
         <b>방법 1 — 파일 이름 바꾸기 (가장 빠름)</b><br>
-        다운로드 폴더에서 .crdownload 파일을 우클릭 → 이름 바꾸기 → <b>H-Factory.Setup.exe</b> 로 변경 → 확장자 경고 팝업에서 <b>예</b> 클릭 → 실행<br><br>
+        다운로드 폴더에서 .crdownload 파일을 우클릭 → 이름 바꾸기 → <b>SsamBoard.Setup.exe</b> 로 변경 → 확장자 경고 팝업에서 <b>예</b> 클릭 → 실행<br><br>
         <b>방법 2 — 브라우저 다운로드 목록에서 허용</b><br>
         Chrome 주소창에 <b>chrome://downloads</b> 입력 → 해당 파일 옆 ⋮ 메뉴 → <b>유지</b> 또는 <b>허용</b> 클릭<br><br>
 
@@ -306,7 +308,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
     <div class="wt-title">업무도구 <em>사용법</em></div>
   </div>
   <div class="wt-body">
-    <p class="wt-intro">업무도구 위젯(🗂️)의 도구 버튼을 클릭하면 각 도구가 별도 창으로 열립니다.</p>
+    <p class="wt-intro">업무도구 위젯(🗂️)의 도구 버튼을 클릭하면 총 10가지 도구가 별도 창으로 열립니다.</p>
 
     <!-- 상담 일지 -->
     <div class="wt-tool">
@@ -389,11 +391,11 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="wt-warn"><span class="wt-warn-icon">⚠️</span><span>5등급제(고1~2 공통과목)와 9등급제(고3 선택과목)를 자동으로 감지하여 적용합니다.</span></div>
     </div>
 
-    <!-- 수업자료 생성 (v1.5.0 신규) -->
+    <!-- 수업자료 생성 -->
     <div class="wt-tool">
       <div class="wt-tool-header">
         <span class="wt-tool-icon">📝</span>
-        <div class="wt-tool-name">수업자료 생성 <span style="font-size:10px;background:#34C759;color:#fff;border-radius:6px;padding:2px 7px;vertical-align:middle;font-weight:700;margin-left:6px">v1.5.0 신규</span></div>
+        <div class="wt-tool-name">수업자료 생성</div>
       </div>
       <p class="wt-tool-desc">2022 개정교육과정 전체 성취기준(중학교 25과목 + 고등학교 151과목)이 내장된 AI 프롬프트 생성기입니다. 수업 주제와 성취기준을 선택하면 수업 자료 프롬프트를 자동으로 만들어 줍니다.</p>
       <div class="wt-sub">생성 가능한 자료</div>
@@ -415,11 +417,11 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>모든 프롬프트에 할루시네이션 방지 지침이 자동으로 포함됩니다. 생성 기록은 최대 20개까지 저장됩니다.</span></div>
     </div>
 
-    <!-- 간단 성적 산출 -->
+    <!-- 수행평가 채점표 -->
     <div class="wt-tool">
       <div class="wt-tool-header">
         <span class="wt-tool-icon">📊</span>
-        <div class="wt-tool-name">간단 성적 산출</div>
+        <div class="wt-tool-name">수행평가 채점표</div>
       </div>
       <p class="wt-tool-desc">지필·수행 항목별 반영비율을 설정하고 점수를 입력하면 100점 환산 점수, 등수, 등급을 자동으로 산출합니다. 엑셀 양식 다운로드 후 점수를 입력해 업로드하는 방식도 지원합니다.</p>
       <div class="wt-sub">기본 사용법</div>
@@ -465,6 +467,102 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>생일은 MM-DD 형식(예: 03-15)으로 입력하면 올해 생일이 지났을 경우 자동으로 내년 날짜로 D-DAY를 등록합니다.</span></div>
     </div>
 
+    <!-- 문제변형기 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">🔄</span>
+        <div class="wt-tool-name">문제변형기</div>
+      </div>
+      <p class="wt-tool-desc">기존 문제를 다양한 유형·난이도로 자동 변형하는 AI 프롬프트 생성기입니다. 텍스트 직접 입력이나 파일·이미지 업로드를 지원합니다.</p>
+      <div class="wt-sub">사용 방법</div>
+      <ol class="wt-steps">
+        <li>입력 방식 선택 (직접 입력 / 파일 업로드 / 이미지 업로드)</li>
+        <li>변형할 문제 입력 또는 파일·이미지 업로드</li>
+        <li>변형 유형 선택 (객관식↔서술형, 빈칸완성, OX퀴즈, 유사 문제 등)</li>
+        <li>난이도 슬라이더로 원하는 수준 설정</li>
+        <li><b>✨ 변형 프롬프트 생성</b> 클릭 → AI에 붙여넣기</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>다양한 변형 유형:</b> 객관식→서술형, 서술형→객관식, 빈칸완성, OX퀴즈, 유사 문제, 쉬운 풀이 등</li>
+        <li><b>이미지 입력 지원:</b> 시험지·교재 사진을 직접 업로드하여 문제 추출 및 변형</li>
+        <li><b>난이도 조절:</b> 슬라이더로 1~5단계 설정</li>
+        <li><b>즉시 복사:</b> 생성된 프롬프트 자동 복사 및 AI 링크 바로가기</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>이미지 업로드는 교재나 시험지 사진도 인식할 수 있습니다. Claude, ChatGPT, Gemini 모두 사용 가능합니다.</span></div>
+    </div>
+
+    <!-- 공문서 도우미 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📄</span>
+        <div class="wt-tool-name">공문서 도우미</div>
+      </div>
+      <p class="wt-tool-desc">기안 초안 작성, 기안문 교정, 가정통신문 생성을 지원하는 AI 프롬프트 생성기입니다. 행정안전부 2025 공문서 편람 기준을 기반으로 합니다.</p>
+      <div class="wt-sub">기능별 사용 방법</div>
+      <ul class="wt-bullets">
+        <li><b>기안 초안 작성:</b> 문서 종류·제목·목적 입력 → 기안문 초안 프롬프트 생성</li>
+        <li><b>기안문 교정:</b> 작성한 기안문 텍스트 붙여넣기 → 편람 기준 교정 프롬프트 생성</li>
+        <li><b>가정통신문 작성:</b> 제목·목적·핵심 내용 입력 → 가정통신문 초안 프롬프트 생성</li>
+      </ul>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>행정안전부 편람 기준:</b> 2025 공문서 작성 규정이 프롬프트에 자동 반영</li>
+        <li><b>3가지 작성 모드:</b> 기안 초안 / 교정 / 가정통신문 탭 전환</li>
+        <li><b>즉시 복사:</b> 생성된 프롬프트를 Claude, ChatGPT 등에 바로 붙여넣기</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>생성된 프롬프트를 AI에 붙여넣으면 학교·교사·부서 정보에 맞춘 공문서 초안을 빠르게 받을 수 있습니다.</span></div>
+    </div>
+
+    <!-- 생기부 초안 생성 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📓</span>
+        <div class="wt-tool-name">생기부 초안 생성</div>
+      </div>
+      <p class="wt-tool-desc">학생의 활동 사례·키워드를 입력하면 생활기록부 교과 세부능력 및 특기사항 초안을 자동 생성하는 AI 프롬프트 생성기입니다.</p>
+      <div class="wt-sub">사용 방법</div>
+      <ol class="wt-steps">
+        <li>학교급·과목·학년 선택</li>
+        <li>역량 도메인 선택 (학업·인성·진로 등 영역별 아코디언 메뉴)</li>
+        <li>학생 활동 사례·키워드·진로 희망 입력</li>
+        <li><b>✨ 생기부 초안 생성</b> 클릭 → AI에 붙여넣기</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>금지어 자동 경고:</b> 생활기록부 작성 금지 표현을 실시간으로 경고</li>
+        <li><b>도메인별 역량 선택:</b> 학업·인성·진로·창체 등 영역별로 강조할 역량 선택 가능</li>
+        <li><b>글자 수 가이드:</b> 생기부 글자 수 제한에 맞춘 길이 목표 설정 가능</li>
+        <li><b>AI 바로가기:</b> Claude, ChatGPT, Gemini 링크로 즉시 이동</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>학생 이름 등 개인정보는 AI에 입력하지 않도록 사례와 역량 중심으로 입력하는 것을 권장합니다.</span></div>
+    </div>
+
+    <!-- 평가 계획 작성 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">📋</span>
+        <div class="wt-tool-name">평가 계획 작성</div>
+      </div>
+      <p class="wt-tool-desc">수행평가 영역·비율·배점 구조를 설계하면 AI가 수행평가를 추천하고 평가계획서 및 한셀 호환 채점기준표까지 생성하는 프롬프트를 자동으로 만듭니다.</p>
+      <div class="wt-sub">사용 방법</div>
+      <ol class="wt-steps">
+        <li>과목·학교급·학년·학기·단원명 입력</li>
+        <li>정기고사·수행평가 반영비율(%) 슬라이더로 설정</li>
+        <li>수행평가 횟수 및 배점 구조 입력 (선택)</li>
+        <li>원하는 수행평가 방향·유형 자유 입력 (선택)</li>
+        <li><b>✨ 프롬프트 생성</b> 클릭 → AI에 붙여넣기</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>수행평가 AI 추천:</b> 과목·단원·요청사항에 맞는 수행평가 유형을 AI가 먼저 추천</li>
+        <li><b>채점기준표 자동 생성:</b> 한셀(HanCell) 호환 엑셀 채점기준표 생성 지침 포함</li>
+        <li><b>반영비율 자동 계산:</b> 정기고사·수행평가 합계가 100%를 유지하도록 자동 조정</li>
+        <li><b>현재 입력 요약:</b> 생성 전 설정 내용 요약 카드로 최종 확인 가능</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>수행평가 요청사항을 비워두면 AI가 과목·학년·단원에 맞는 수행평가를 자동으로 제안합니다.</span></div>
+    </div>
+
   </div>
 </section>
 
@@ -486,14 +584,14 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
     <div class="dl-note">
       Windows 전용 앱입니다 · macOS는 지원하지 않습니다<br>
       <b>자동 업데이트</b> 지원 — 새 버전이 나오면 앱에서 바로 알려드립니다<br>
-      <b>v1.8.0</b> — 오늘의 미션 위젯 · 8교시 설정 · 학사일정 다중 일정 표시
+      <b>v2.3.1</b> — 공문서 도우미 · 문제변형기 · 생기부 초안 생성 · 평가 계획 작성
     </div>
   </div>
 </section>
 
 <!-- ── FOOTER ── -->
 <footer>
-  <div class="footer-brand">H&#8209;<em style="font-style:italic">F</em>actory</div>
+  <div class="footer-brand">Ssam&#8209;<em style="font-style:italic">B</em>oard</div>
   <div class="footer-info">
     Engineered by 황성재 · 성포고<br>
     powered by caffeine ☕ &nbsp;·&nbsp;
