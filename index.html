@@ -179,6 +179,8 @@ select:focus{border-color:var(--mint)}
   font-family:'Nanum Gothic',sans-serif;font-size:12.5px;font-weight:800;cursor:pointer}
 .key-bar-row button:hover{opacity:.88}
 .key-bar-row button.key-bar-close{background:transparent;color:#a16207;border:1.5px solid #f5c980}
+.key-bar-row button.key-bar-reset{background:#fff1f2;color:#9f1239;border:1.5px solid #fecdd3}
+.key-bar-row button.key-bar-reset:hover{background:#fecdd3;opacity:1}
 .err-box{display:none;white-space:pre-line;background:#fff1f2;border:1.5px solid #fecdd3;
   border-radius:10px;padding:11px 14px;font-size:12.5px;line-height:1.7;color:#9f1239;margin-bottom:10px}
 #notif{position:fixed;top:16px;right:20px;background:var(--mint-d);color:#fff;
@@ -232,6 +234,7 @@ footer a{color:var(--mint-d);text-decoration:none;font-weight:700}
     <div class="key-bar-row">
       <input type="password" id="keyInput" placeholder="gsk_ 로 시작하는 Groq API 키를 붙여넣으세요" />
       <button onclick="saveApiKey()">저장</button>
+      <button class="key-bar-reset" onclick="resetApiKey()">🗑️ 키 초기화</button>
       <button class="key-bar-close" onclick="closeKeyBar()">닫기</button>
     </div>
   </div>
@@ -953,6 +956,19 @@ function saveApiKey() {
   closeKeyBar();
   showNotif('✅ API 키가 저장되었습니다.');
   checkApiStatus('apiDot', 'apiStatus');
+}
+
+// 저장된 키를 지운다 — 다른 키로 바꾸거나 공용 PC에서 흔적을 남기지 않을 때
+function resetApiKey() {
+  if (!GROQ_API_KEY && !loadApiKey()) { showNotif('저장된 API 키가 없습니다.'); return; }
+  if (!confirm('이 브라우저에 저장된 Groq API 키를 삭제할까요?')) return;
+  try { localStorage.removeItem(KEY_STORAGE); } catch(e) {}
+  GROQ_API_KEY = '';
+  document.getElementById('keyInput').value = '';
+  document.getElementById('apiDot').className = 'api-dot off';
+  document.getElementById('apiStatus').textContent = '키 미등록';
+  openKeyBar();
+  showNotif('🗑️ API 키가 초기화되었습니다.');
 }
 
 // 키가 없으면 안내 바를 자동으로 펼치고 상태 배지에도 표시한다
