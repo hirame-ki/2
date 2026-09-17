@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SsamBoard v2.7.6 — 교사전용 바탕화면 위젯</title>
+<title>SsamBoard v2.7.11 — 교사전용 바탕화면 위젯</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='white'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%230a0a0a'%3EH%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -165,7 +165,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
   <div class="hero-grain"></div>
   <div class="hero-ghost">S</div>
   <div class="hero-body">
-    <div class="eyebrow">교사전용 Windows 바탕화면 위젯 · 무료 · v2.7.6</div>
+    <div class="eyebrow">교사전용 Windows 바탕화면 위젯 · 무료 · v2.7.11</div>
     <div class="hero-mark">Ssam&#8209;<em>B</em>oard</div>
     <div class="hero-sub">Desktop Widget App for Teachers</div>
     <div class="hero-desc">
@@ -217,7 +217,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="feat-num">Feature 04</div>
       <span class="feat-icon">🗂️</span>
       <div class="feat-name">업무도구 모음</div>
-      <div class="feat-desc">상담 일지, 진도 체크, 성적 분석, 공문서 도우미, 생기부 초안 생성까지. 교사의 핵심 업무를 AI로 빠르게 처리할 수 있는 총 10가지 도구를 별도 창에서 사용합니다.</div>
+      <div class="feat-desc">상담 일지, 진도 체크, 성적 분석, 공문서 도우미, 생기부 초안 생성, 규정나침반, 기록 정리 도우미까지. 교사의 핵심 업무를 AI로 빠르게 처리할 수 있는 총 12가지 도구를 별도 창에서 사용합니다.</div>
     </div>
   </div>
 </section>
@@ -308,7 +308,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
     <div class="wt-title">업무도구 <em>사용법</em></div>
   </div>
   <div class="wt-body">
-    <p class="wt-intro">업무도구 위젯(🗂️)의 도구 버튼을 클릭하면 총 10가지 도구가 별도 창으로 열립니다.</p>
+    <p class="wt-intro">업무도구 위젯(🗂️)의 도구 버튼을 클릭하면 총 12가지 도구가 별도 창으로 열립니다.</p>
 
     <!-- 상담 일지 -->
     <div class="wt-tool">
@@ -316,12 +316,12 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
         <span class="wt-tool-icon">💬</span>
         <div class="wt-tool-name">상담 일지</div>
       </div>
-      <p class="wt-tool-desc">학생별 상담 내용을 날짜별로 기록하고 조회하는 도구입니다.</p>
+      <p class="wt-tool-desc">학생별 상담 내용을 날짜별로 기록·조회하고, 누적 기록으로 <b>학부모 상담 준비 프롬프트</b>를 만드는 도구입니다.</p>
       <div class="wt-sub">기본 사용법</div>
       <ol class="wt-steps">
         <li>좌측 패널에서 반 선택 후 상담할 학생 클릭</li>
         <li>우측 상담 기록 패널에서 <b>+ 상담 추가</b> 버튼 클릭</li>
-        <li>날짜, 상담 유형(학업 / 생활 / 진로 / 기타), 상담 내용 입력 후 저장</li>
+        <li>날짜, 상담 유형(학업 / 생활 / 진로 / 기타), 상담 내용 입력 후 저장 (<b>Ctrl+Enter</b>로도 저장)</li>
         <li>저장된 상담 기록은 날짜 역순으로 타임라인 형식으로 표시됩니다</li>
       </ol>
       <div class="wt-sub">주요 기능</div>
@@ -330,8 +330,19 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
         <li><b>이름 검색:</b> 상단 검색창으로 학생 빠르게 찾기</li>
         <li><b>상담 유형 색상 코딩:</b> 학업(파랑) / 생활(초록) / 진로(주황) / 기타(회색)</li>
         <li><b>엑셀 내보내기:</b> 전체 학생 요약 시트 + 학생별 개별 시트로 내보내기 가능</li>
+        <li><b>기록 수정:</b> 타임라인의 각 기록에서 수정·삭제 가능</li>
       </ul>
-      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>상담 일지 데이터는 H-Factory 설정 파일에 자동 저장됩니다. 앱을 재실행해도 데이터가 유지됩니다.</span></div>
+      <div class="wt-sub">학부모 상담 프롬프트 생성 (v2.7.10)</div>
+      <ol class="wt-steps">
+        <li>학생을 선택하고 <b>프롬프트 생성</b> 버튼 클릭</li>
+        <li>상담 예정일 · 상담 방식(대면 / 전화 / 화상 / 서면) · 포함할 기간 · 다룰 내용 선택</li>
+        <li><b>개인정보 보호</b>를 켜면 학생 이름은 ○○, 반 이름은 비공개로 바뀝니다</li>
+        <li><b>복사</b>해서 ChatGPT · Claude 등에 붙여넣거나 <b>바탕화면에 저장</b></li>
+      </ol>
+      <ul class="wt-bullets">
+        <li><b>결과 구성:</b> 종합 요약 · 영역별 변화 추이 · 강점과 성장 포인트 · 핵심 메시지 · 발문 목록 · 예상 질문과 답변 · 민감한 상황 화법 · 후속 조치</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>상담 일지 데이터는 설정 파일에 자동 저장됩니다. 업데이트 전에 쓰던 상담 기록도 그대로 이어서 쓸 수 있습니다.</span></div>
     </div>
 
     <!-- 진도 체크 -->
@@ -563,6 +574,54 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
       <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>수행평가 요청사항을 비워두면 AI가 과목·학년·단원에 맞는 수행평가를 자동으로 제안합니다.</span></div>
     </div>
 
+    <!-- 규정나침반 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">🧭</span>
+        <div class="wt-tool-name">규정나침반</div>
+      </div>
+      <p class="wt-tool-desc">내 학교의 규정·지침 문서를 등록해 두면, 질문할 때마다 관련 조항을 근거로 제시하며 답해 주는 도구입니다.</p>
+      <div class="wt-sub">사용 방법</div>
+      <ol class="wt-steps">
+        <li>설정 → <b>AI API</b> 탭에 NVIDIA 무료 키(nvapi-) 등록 (카드 등록 불필요)</li>
+        <li>규정·지침 파일(PDF · DOCX · HWPX · TXT)을 끌어다 놓기 — 처음 한 번만 분석</li>
+        <li>상황이나 질문을 입력하고 <b>질의</b> 클릭</li>
+        <li>근거 조항과 함께 답변 확인 후, 아래 채팅창에서 이어서 질문</li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>문서별 체크박스:</b> 체크한 규정집에서만 답을 찾아 정확도를 높입니다</li>
+        <li><b>근거 조항 개수 조절:</b> 3개(빠르게) ~ 8개(두루 검토)</li>
+        <li><b>질의 기록 자동 저장:</b> 클릭하면 답변·근거·채팅까지 복원, 마크다운 내보내기</li>
+        <li><b>모델 자동 전환:</b> 사용하던 AI 모델이 종료되면 다음 모델로 자동 이어집니다</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">⚠️</span><span>올린 문서는 분석을 위해 외부 AI 서버로 전송됩니다. 개인정보·기밀이 담긴 문서는 올리지 마세요.</span></div>
+    </div>
+
+    <!-- 기록 정리 도우미 -->
+    <div class="wt-tool">
+      <div class="wt-tool-header">
+        <span class="wt-tool-icon">🎙️</span>
+        <div class="wt-tool-name">기록 정리 도우미</div>
+      </div>
+      <p class="wt-tool-desc">녹음 파일을 올리거나 창에서 바로 녹음하면 전사부터 정리, 추가 질문까지 한 번에 끝내는 도구입니다.</p>
+      <div class="wt-sub">사용 방법</div>
+      <ol class="wt-steps">
+        <li>설정 → <b>AI API</b> 탭에 Deepgram(전사)·Groq(정리) 무료 키 등록</li>
+        <li>상단에서 모드 선택 — <b>학생 발표 · 회의 · 상담 · 수업</b></li>
+        <li>녹음 파일(mp3·m4a·wav·mp4·txt 등)을 올리거나 <b>🎙️ 바로 녹음</b></li>
+        <li>결과 유형·문체·형식을 고르고 <b>정리 시작</b></li>
+      </ol>
+      <div class="wt-sub">주요 기능</div>
+      <ul class="wt-bullets">
+        <li><b>모드별 맞춤 정리:</b> 회의는 안건·결정사항·후속조치, 상담은 경위·소견·추수지도, 수업은 학습목표·전개·과제</li>
+        <li><b>자동 화자 분리:</b> 화자1·화자2로 발언자를 구분해 전사하고 정리에도 반영</li>
+        <li><b>결과에 이어 질문:</b> 정리된 기록을 근거로 "결정사항만 다시 알려줘"처럼 추가 질문</li>
+        <li><b>보관함 · 내보내기:</b> .md / .txt 다운로드, 결과는 내 기기에만 저장</li>
+      </ul>
+      <div class="wt-tip"><span class="wt-tip-icon">💡</span><span>휴대폰의 "녹음 → 텍스트 변환" 결과(txt)를 올리면 전사 단계를 건너뛰어 훨씬 빠릅니다. 회의 녹음은 참석자 동의 하에 사용하세요.</span></div>
+    </div>
+
   </div>
 </section>
 
@@ -584,7 +643,7 @@ footer{padding:36px 40px;border-top:1px solid var(--g200);display:flex;align-ite
     <div class="dl-note">
       Windows 전용 앱입니다 · macOS는 지원하지 않습니다<br>
       <b>자동 업데이트</b> 지원 — 새 버전이 나오면 앱에서 바로 알려드립니다<br>
-      <b>v2.7.6</b> — 위젯 접기 기능 추가 — 상단 탭으로 접어두고 다른 작업, 누르면 바로 복귀
+      <b>v2.7.11</b> — 화면 위젯과 설정창 위젯 표시 동기화 · <b>v2.7.10</b> — 상담 일지 학부모 상담 프롬프트 생성 · <b>v2.7.9</b> — 듀얼모니터 위젯 배치 유지
     </div>
   </div>
 </section>
