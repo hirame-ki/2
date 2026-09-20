@@ -903,33 +903,7 @@ function widgetBody(id){
     return picker + '<ul>' + list.map(([n, v]) =>
       `<li class="item"><div class="txt"><span class="chip">${n}</span>${esc(v)}</div></li>`).join('') + '</ul>';
   }
-  if (id === 'stats'){
-    const att = sec('attendance', null);
-    const meta = sec('classMeta', []) || [];
-    if (!att) return '<div class="empty">출결 기록이 없습니다</div>';
-    const ym = t.slice(0, 7);
-    const count = { late:0, absent:0, early:0 };
-    Object.entries(att).forEach(([date, classes]) => {
-      if (!date.startsWith(ym)) return;
-      Object.values(classes || {}).forEach(cls => {
-        Object.entries(cls || {}).forEach(([k, v]) => {
-          if (k === 'memos') return;
-          if (count[v] !== undefined) count[v]++;
-        });
-      });
-    });
-    const total = meta.reduce((a, c) => a + (c.count || 0), 0);
-    const max = Math.max(1, count.late, count.absent, count.early);
-    const bar = (nm, v, color) => `<div class="bar"><span class="nm">${nm}</span>
-      <span class="tr"><span class="fl" style="width:${(v / max * 100).toFixed(0)}%;background:${color}"></span></span>
-      <span class="vl">${v}</span></div>`;
-    return `<div class="sub" style="margin-bottom:6px">이번 달 · 학생 ${total}명</div>
-      <div class="bars">
-        ${bar('지각', count.late, 'var(--warning)')}
-        ${bar('결석', count.absent, 'var(--danger)')}
-        ${bar('조퇴', count.early, 'var(--accent)')}
-      </div>`;
-  }
+  if (id === 'stats') return statsBody(t.slice(0, 7), '이번 달');
   if (id === 'roster'){
     const roster = sec('roster', null);
     if (!roster || !roster.length)
@@ -1138,10 +1112,10 @@ function renderRosterDetail(classIdx){
   }
 
   const cls = roster[classIdx];
-  $('#detail-title').textContent = `${cls.name} · ${dayLabel(t)}`;
+  const day = (typeof rosterDate === 'function') ? rosterDate() : t;
+  $('#detail-title').textContent = `${cls.name} · ${dayLabel(day)}${day === t ? ' (오늘)' : ''}`;
   const att = sec('attendance', {});
-  const today = att[t] || {};
-  const mine = today[classIdx] || {};
+  const mine = (att[day] || {})[classIdx] || {};
 
   body.innerHTML =
     `<button class="wtool" id="back-cls" style="margin-bottom:10px;height:32px;width:auto;padding:0 12px">← 반 목록</button>` +
@@ -1164,14 +1138,15 @@ function renderRosterDetail(classIdx){
     group.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
       const status = btn.dataset.st;
       const all = sec('attendance', {});
-      if (!all[t]) all[t] = {};
-      if (!all[t][classIdx]) all[t][classIdx] = { memos: {} };
-      const slot = all[t][classIdx];
+      if (!all[day]) all[day] = {};
+      if (!all[day][classIdx]) all[day][classIdx] = { memos: {} };
+      const slot = all[day][classIdx];
       if (status === 'present') delete slot[si]; else slot[si] = status;
       if (!slot.memos) slot.memos = {};
       touch('attendance', all);
       group.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
       renderGrid();
+      if (tab === 'roster') renderRosterTab();
     }));
   });
 }
@@ -1580,10 +1555,74 @@ function renderCalDay(){
 }
 
 // ══════════════════════════════════════════
-// 명렬표 탭 — 통계와 한 세트
+// 명렬표 탭 — 통계와 한 세트, 월·날짜를 바꿔 볼 수 있다
 // ══════════════════════════════════════════
+let statsYM = null;      // 통계로 보고 있는 달 'YYYY-MM'
+let rosterDay = null;    // 출결을 입력할 날짜 ISO
+
+const statsMonth = () => statsYM || todayStr().slice(0, 7);
+const rosterDate = () => rosterDay || todayStr();
+
+function shiftMonth(ym, step){
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + step, 1);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+const monthLabel = (ym) => {
+  const [y, m] = ym.split('-');
+  return `${y}년 ${Number(m)}월`;
+};
+
+// 한 달치 출결 집계
+function statsBody(ym, label){
+  const att = sec('attendance', null);
+  const meta = sec('classMeta', []) || [];
+  if (!att) return '<div class="empty">출결 기록이 없습니다</div>';
+
+  const count = { late:0, absent:0, early:0 };
+  Object.entries(att).forEach(([date, classes]) => {
+    if (!date.startsWith(ym)) return;
+    Object.values(classes || {}).forEach(cls => {
+      Object.entries(cls || {}).forEach(([k, v]) => {
+        if (k === 'memos') return;
+        if (count[v] !== undefined) count[v]++;
+      });
+    });
+  });
+
+  const total = meta.reduce((a, c) => a + (c.count || 0), 0);
+  const sum = count.late + count.absent + count.early;
+  const max = Math.max(1, count.late, count.absent, count.early);
+  const bar = (nm, v, color) => `<div class="bar"><span class="nm">${nm}</span>
+    <span class="tr"><span class="fl" style="width:${(v / max * 100).toFixed(0)}%;background:${color}"></span></span>
+    <span class="vl">${v}</span></div>`;
+
+  return `<div class="sub" style="margin-bottom:6px">${label} · 학생 ${total}명${sum ? '' : ' · 기록 없음'}</div>
+    <div class="bars">
+      ${bar('지각', count.late, 'var(--warning)')}
+      ${bar('결석', count.absent, 'var(--danger)')}
+      ${bar('조퇴', count.early, 'var(--accent)')}
+    </div>`;
+}
+
 function renderRosterTab(){
-  $('#roster-stats').innerHTML = widgetBody('stats');
+  const ym = statsMonth();
+  const thisMonth = ym === todayStr().slice(0, 7);
+  $('#roster-stats').innerHTML =
+    `<div class="nav" id="stats-nav">
+       <button data-sstep="-1">‹</button>
+       <span class="lbl">${monthLabel(ym)}</span>
+       <button data-sstep="1" ${thisMonth ? 'disabled' : ''}>›</button>
+     </div>` +
+    statsBody(ym, thisMonth ? '이번 달' : monthLabel(ym));
+
+  $('#roster-stats').querySelectorAll('[data-sstep]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      const next = shiftMonth(statsMonth(), Number(btn.dataset.sstep));
+      if (next > todayStr().slice(0, 7)) return;      // 다음 달은 보지 않는다
+      statsYM = next;
+      renderRosterTab();
+    }));
 
   const body = $('#roster-body');
   const roster = sec('roster', null) || [];
@@ -1591,19 +1630,44 @@ function renderRosterTab(){
     body.innerHTML = '<div class="empty">PC 설정 → 휴대폰 연동에서<br>명렬표 포함을 켜면 보입니다</div>';
     return;
   }
-  const t = todayStr();
+
+  const day = rosterDate();
+  const isToday = day === todayStr();
   const att = sec('attendance', {});
-  body.innerHTML = '<ul>' + roster.map((c, i) => {
-    const marked = Object.entries((att[t] || {})[i] || {})
-      .filter(([k, v]) => k !== 'memos' && v && v !== 'present').length;
-    return `<li class="clsrow tap" data-ci="${i}"><span class="chip">${esc(c.name)}</span>
-      <span class="nm">${c.students.length}명</span>
-      <span class="sub" style="display:inline">${marked ? '오늘 특이 ' + marked + '명' : '전원 출석'}</span>
-      <span style="color:var(--text-tertiary)">›</span></li>`;
-  }).join('') + '</ul>';
+
+  body.innerHTML =
+    `<div class="nav" id="roster-nav">
+       <button data-dstep="-1">‹</button>
+       <span class="lbl">${dayLabel(day)}${isToday ? ' · 오늘' : ''}</span>
+       <button data-dstep="1">›</button>
+       ${isToday ? '' : '<button id="roster-today" style="width:auto;padding:0 10px;font-size:11.5px;font-weight:700">오늘</button>'}
+     </div>` +
+    '<ul>' + roster.map((c, i) => {
+      const marked = Object.entries((att[day] || {})[i] || {})
+        .filter(([k, v]) => k !== 'memos' && v && v !== 'present').length;
+      return `<li class="clsrow tap" data-ci="${i}"><span class="chip">${esc(c.name)}</span>
+        <span class="nm">${c.students.length}명</span>
+        <span class="sub" style="display:inline">${marked ? '특이 ' + marked + '명' : '전원 출석'}</span>
+        <span style="color:var(--text-tertiary)">›</span></li>`;
+    }).join('') + '</ul>';
+
+  body.querySelectorAll('[data-dstep]').forEach(btn =>
+    btn.addEventListener('click', () => {
+      rosterDay = shiftDayFrom(rosterDate(), Number(btn.dataset.dstep));
+      renderRosterTab();
+    }));
+  const todayBtn = body.querySelector('#roster-today');
+  if (todayBtn) todayBtn.addEventListener('click', () => { rosterDay = todayStr(); renderRosterTab(); });
 
   body.querySelectorAll('[data-ci]').forEach(row =>
     row.addEventListener('click', () => openDetail('roster', Number(row.dataset.ci))));
+}
+
+// 기준 날짜에서 며칠 이동
+function shiftDayFrom(iso, step){
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + step);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 // ══════════════════════════════════════════
