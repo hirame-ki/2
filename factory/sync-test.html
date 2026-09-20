@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연동 실험 · 쌤보드</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{ --bg:#fff; --fg:#1d1d1f; --muted:#6b7280; --line:#e6e6ee; --accent:#0071e3;
+         --ok:#137333; --bad:#c5221f; --okbg:#e6f4ea; --badbg:#fce8e6; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --bg:#161618; --fg:#f2f2f4; --muted:#a1a1aa; --line:#2c2c30;
+      --accent:#4da3ff; --ok:#81c995; --bad:#f28b82; --okbg:#1e3a29; --badbg:#3b1f1e; }
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--fg); line-height:1.7;
+    font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif; }
+  .wrap{ max-width:620px; margin:0 auto; padding:32px 16px 64px; }
+  h1{ font-size:22px; margin:0 0 4px; }
+  .sub{ color:var(--muted); font-size:14px; margin:0 0 24px; }
+  button{ font:inherit; font-weight:700; padding:12px 18px; border-radius:10px; cursor:pointer;
+    border:none; background:var(--accent); color:#fff; }
+  button:disabled{ opacity:0.45; cursor:default; }
+  .card{ border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin:16px 0; }
+  .verdict{ border-radius:12px; padding:16px 18px; margin:16px 0; font-weight:700; }
+  .verdict.ok{ background:var(--okbg); color:var(--ok); }
+  .verdict.bad{ background:var(--badbg); color:var(--bad); }
+  pre{ background:rgba(127,127,140,0.1); padding:12px; border-radius:8px; overflow-x:auto;
+    font-size:12.5px; white-space:pre-wrap; word-break:break-all; }
+  code{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; }
+  label{ display:block; font-size:13px; color:var(--muted); margin:14px 0 4px; }
+  input{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    background:var(--bg); color:var(--fg); font:inherit; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>휴대폰 연동 실험</h1>
+<p class="sub">PC 쌤보드가 올린 파일이 웹에서도 보이는지 확인합니다.</p>
+
+<div class="card">
+  <label for="cid">웹 클라이언트 ID</label>
+  <input id="cid" placeholder="...apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+  <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0;">
+    한 번 입력하면 이 기기에 기억됩니다.
+  </p>
+</div>
+
+<button id="btn">구글 로그인하고 확인하기</button>
+
+<div id="out"></div>
+
+</div>
+
+<script>
+  const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+  const cidInput = document.getElementById('cid');
+  const out = document.getElementById('out');
+  const btn = document.getElementById('btn');
+
+  try { cidInput.value = localStorage.getItem('ssam_test_cid') || ''; } catch (e) {}
+
+  function show(html) { out.innerHTML = html; }
+  function esc(s) { return String(s).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
+
+  btn.addEventListener('click', () => {
+    const clientId = cidInput.value.trim();
+    if (!clientId) { show('<div class="verdict bad">웹 클라이언트 ID를 먼저 입력해주세요.</div>'); return; }
+    try { localStorage.setItem('ssam_test_cid', clientId); } catch (e) {}
+
+    if (!window.google?.accounts?.oauth2) {
+      show('<div class="verdict bad">구글 로그인 스크립트를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.</div>');
+      return;
+    }
+
+    btn.disabled = true;
+    show('<div class="card">로그인 창을 여는 중…</div>');
+
+    google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPE,
+      callback: async (res) => {
+        btn.disabled = false;
+        if (res.error) { show(`<div class="verdict bad">로그인 실패: ${esc(res.error)}</div>`); return; }
+        await check(res.access_token);
+      },
+      error_callback: (err) => {
+        btn.disabled = false;
+        show(`<div class="verdict bad">로그인이 취소되었거나 막혔습니다: ${esc(err.type || '')}</div>`);
+      },
+    }).requestAccessToken();
+  });
+
+  async function check(token) {
+    show('<div class="card">드라이브 앱 전용 폴더를 확인하는 중…</div>');
+    try {
+      const url = 'https://www.googleapis.com/drive/v3/files'
+        + '?spaces=appDataFolder&fields=files(id,name,modifiedTime,size)';
+      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      const json = await r.json();
+
+      if (!r.ok) {
+        show(`<div class="verdict bad">드라이브 요청 실패 (${r.status})</div>
+              <pre>${esc(JSON.stringify(json, null, 2))}</pre>`);
+        return;
+      }
+
+      const files = json.files || [];
+      const probe = files.find(f => f.name === 'ssamboard-sync.json');
+
+      let html = '';
+      if (probe) {
+        html += `<div class="verdict ok">✅ 공유됩니다 — PC가 올린 파일이 보입니다.<br>
+                 서버 없이 만드는 구조로 진행할 수 있습니다.</div>`;
+        const c = await fetch('https://www.googleapis.com/drive/v3/files/' + probe.id + '?alt=media',
+          { headers: { Authorization: 'Bearer ' + token } });
+        const body = await c.text();
+        html += `<div class="card"><b>파일 내용</b><pre>${esc(body)}</pre></div>`;
+      } else {
+        html += `<div class="verdict bad">❌ 파일이 보이지 않습니다.<br>
+                 앱 전용 폴더가 클라이언트별로 나뉘어 있거나, PC에서 아직 올리지 않았습니다.</div>`;
+      }
+      html += `<div class="card"><b>폴더 안의 파일 (${files.length}개)</b>
+               <pre>${esc(JSON.stringify(files, null, 2))}</pre></div>`;
+      show(html);
+    } catch (e) {
+      show(`<div class="verdict bad">오류: ${esc(e.message)}</div>`);
+    }
+  }
+</script>
+</body>
+</html>
