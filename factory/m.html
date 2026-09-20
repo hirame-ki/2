@@ -111,6 +111,8 @@
   .wrow .nm .sub{ display:block; font-size:11px; color:var(--text-tertiary); font-weight:500; }
 
   main{ position:relative; z-index:1; padding:14px 14px 0; max-width:680px; margin:0 auto; }
+  html, body{ overflow-x:hidden; }
+  .w, .wbody{ min-width:0; max-width:100%; }
 
   /* ── 홈 화면 추가 배너 ── */
   #install-bar{ display:flex; align-items:center; gap:11px; margin-bottom:12px; padding:12px 14px;
@@ -269,7 +271,7 @@
   .bar{ display:flex; align-items:center; gap:8px; font-size:12px; }
   .bar .nm{ width:34px; color:var(--text-secondary); font-weight:700; flex:none; }
   .bar .tr{ flex:1; height:9px; border-radius:6px; background:var(--input-bg); overflow:hidden; }
-  .bar .fl{ height:100%; border-radius:6px; }
+  .bar .fl{ display:block; height:100%; border-radius:6px; }   /* 인라인이면 너비가 먹지 않는다 */
   .bar .vl{ width:24px; text-align:right; font-weight:800; flex:none; }
 
   /* 출결·진도 조작 */
@@ -281,8 +283,29 @@
   .att button{ padding:6px 9px; border-radius:8px; font-size:11.5px; font-weight:700;
     background:var(--input-bg); color:var(--text-secondary); }
   .att button.on{ background:var(--accent); color:var(--accent-on); }
-  .att button.on[data-st="absent"]{ background:var(--danger); color:#fff; }
-  .att button.on[data-st="late"]{ background:var(--warning); color:#fff; }
+  .att button.on[data-st="absent"]{ background:#FF3B30; color:#fff; }
+  .att button.on[data-st="late"]{ background:#FF9500; color:#fff; }
+  .att button.on[data-st="early"]{ background:#0A84FF; color:#fff; }
+  .att button.on[data-st="result"]{ background:#AF52DE; color:#fff; }
+
+  /* 주간 시간표 (두 칸일 때) */
+  .tt-week{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:11.5px; }
+  .tt-week th{ font-size:10.5px; color:var(--text-tertiary); font-weight:700; padding:3px 0; }
+  .tt-week th.today{ color:var(--accent); }
+  .tt-week td{ text-align:center; padding:5px 2px; border-top:1px solid var(--divider);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tt-week td.n{ color:var(--text-tertiary); font-weight:700; width:22px; }
+  .tt-week td.today{ background:var(--accent-soft); }
+  .tt-week td.ch{ color:var(--warning); font-weight:700; }
+  .tt-week .t{ display:block; font-size:9.5px; color:var(--text-tertiary); }
+
+  /* 이름별 출결 목록 */
+  .issue{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--divider);
+    font-size:13px; min-width:0; }
+  .issue:last-child{ border-bottom:none; }
+  .issue .who{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .issue .tags{ display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; max-width:62%; }
+  .issue .tag{ font-size:11px; font-weight:800; color:#fff; padding:2px 7px; border-radius:10px; white-space:nowrap; }
   .lsn{ padding:12px 0; border-bottom:1px solid var(--divider); }
   .lsn:last-child{ border-bottom:none; }
   .lsn .att{ display:flex; gap:6px; }
@@ -825,7 +848,7 @@ function flatEvents(){
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function widgetBody(id){
+function widgetBody(id, size){
   const t = todayStr();
   if (id === 'todo'){
     const todos = sec('todos', []);
@@ -866,8 +889,17 @@ function widgetBody(id){
     const tt = wk ? wk.tt : (sec('timetable', {}) || {});
     const changed = wk ? wk.changed : null;
     const key = view.timetable || DAY_KEYS[new Date().getDay()];
-    const picker = (data && data.weeks ? weekNav('ttWeek', data.weeks, wk && wk.start) : '')
-      + dayPicker('timetable', key);
+    const weekBar = data && data.weeks ? weekNav('ttWeek', data.weeks, wk && wk.start) : '';
+
+    // 두 칸(전체보기)이면 월~금 전체를 표로
+    if (size === 2){
+      return weekBar + weekTable((k, i) => {
+        const v = (tt[k] || [])[i];
+        return v ? { s: v, ch: !!(changed && changed[k] && changed[k][i]) } : null;
+      });
+    }
+
+    const picker = weekBar + dayPicker('timetable', key);
     const thisWeek = !view.ttWeek || (data && view.ttWeek === data.current);
     if (!view.timetable && thisWeek){
       const off = holidayLabel();
@@ -909,8 +941,27 @@ function widgetBody(id){
     const key = view.classtable || DAY_KEYS[new Date().getDay()];
     const cw = sec('classWeekTable', null);
     const cwk = pickWeek(cw, view.ctWeek);
-    const picker = (cw && cw.weeks ? weekNav('ctWeek', cw.weeks, cwk && cwk.start) : '')
-      + dayPicker('classtable', key);
+    const cweekBar = cw && cw.weeks ? weekNav('ctWeek', cw.weeks, cwk && cwk.start) : '';
+
+    if (size === 2){
+      if (cwk && cwk.tt){
+        return cweekBar + weekTable((k, i) => {
+          const c = (cwk.tt[k] || [])[i];
+          return c && c.s ? { s: c.s, t: c.t, ch: c.ch } : null;
+        });
+      }
+      const ct0 = sec('classTimetable', null);
+      if (ct0 && ct0.cells){
+        const idx = { mon:0, tue:1, wed:2, thu:3, fri:4 };
+        return weekTable((k, i) => {
+          const v = (ct0.cells[i] || [])[idx[k]];
+          return v ? { s: v } : null;
+        });
+      }
+      return '<div class="empty">학급 시간표가 없습니다</div>';
+    }
+
+    const picker = cweekBar + dayPicker('classtable', key);
 
     // 컴시간을 쓰면 그 주 실제 학급 시간표(변경·담당교사 포함)를 먼저 쓴다
     if (cwk && cwk.tt && cwk.tt[key]){
@@ -971,7 +1022,10 @@ function widgetBody(id){
 const view = { meal: 0, timetable: null, classtable: null, ttWeek: null, ctWeek: null };
 const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
-const ATT = [['present','출석'], ['late','지각'], ['absent','결석'], ['early','조퇴']];
+// 데스크톱 명렬표와 같은 값 — 아무것도 고르지 않으면 출석(present)
+const ATT = [['absent','결석'], ['late','지각'], ['early','조퇴'], ['result','결과']];
+const ATT_COLOR = { absent:'#FF3B30', late:'#FF9500', early:'#0A84FF', result:'#AF52DE' };
+const ATT_NAME  = { absent:'결석', late:'지각', early:'조퇴', result:'결과' };
 
 function shiftDay(offset){
   const d = new Date();
@@ -1066,6 +1120,28 @@ function pickWeek(data, chosenStart){
   if (!weeks.length) return { tt: data.tt, changed: data.changed, start: data.current || '' };
   const want = chosenStart || data.current || weeks[0].start;
   return weeks.find(w => w.start === want) || weeks[0];
+}
+
+// 주간 시간표 — 월~금을 한 번에 (두 칸 위젯)
+function weekTable(getCell){
+  const keys = ['mon','tue','wed','thu','fri'];
+  const names = ['월','화','수','목','금'];
+  const todayKey = DAY_KEYS[new Date().getDay()];
+  let rows = 0;
+  keys.forEach(k => { for (let i = 0; i < 9; i++) if (getCell(k, i)) rows = Math.max(rows, i + 1); });
+  if (!rows) return '<div class="empty">시간표가 없습니다</div>';
+
+  let html = '<table class="tt-week"><tr><th></th>' +
+    keys.map((k, i) => `<th class="${k === todayKey ? 'today' : ''}">${names[i]}</th>`).join('') + '</tr>';
+  for (let r = 0; r < rows; r++){
+    html += `<tr><td class="n">${r + 1}</td>` + keys.map(k => {
+      const c = getCell(k, r);
+      const cls = [k === todayKey ? 'today' : '', c && c.ch ? 'ch' : ''].join(' ');
+      if (!c) return `<td class="${cls}"></td>`;
+      return `<td class="${cls}">${esc(c.s)}${c.t ? `<span class="t">${esc(c.t)}</span>` : ''}</td>`;
+    }).join('') + '</tr>';
+  }
+  return html + '</table>';
 }
 
 // 요일 선택 줄 (월~금)
@@ -1183,6 +1259,7 @@ function renderRosterDetail(classIdx){
 
   body.innerHTML =
     `<button class="wtool" id="back-cls" style="margin-bottom:10px;height:32px;width:auto;padding:0 12px">← 반 목록</button>` +
+    `<div class="sub" style="margin-bottom:6px">아무것도 누르지 않으면 출석입니다. 다시 누르면 해제됩니다.</div>` +
     '<ul>' + cls.students.map((nm, si) => {
       const cur = mine[si] || 'present';
       return `<li class="stu"><span class="no">${si + 1}</span><span class="nm">${esc(nm)}</span>
@@ -1200,7 +1277,8 @@ function renderRosterDetail(classIdx){
   body.querySelectorAll('.att').forEach(group => {
     const si = group.dataset.si;
     group.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
-      const status = btn.dataset.st;
+      // 이미 켜진 버튼을 다시 누르면 해제 → 출석 (데스크톱과 같다)
+      const status = btn.classList.contains('on') ? 'present' : btn.dataset.st;
       const all = sec('attendance', {});
       if (!all[day]) all[day] = {};
       if (!all[day][classIdx]) all[day][classIdx] = { memos: {} };
@@ -1208,7 +1286,7 @@ function renderRosterDetail(classIdx){
       if (status === 'present') delete slot[si]; else slot[si] = status;
       if (!slot.memos) slot.memos = {};
       touch('attendance', all);
-      group.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+      group.querySelectorAll('button').forEach(b => b.classList.toggle('on', status !== 'present' && b === btn));
       renderGrid();
       if (tab === 'roster') renderRosterTab();
     }));
@@ -1363,7 +1441,7 @@ function renderGrid(){
 
     const body = document.createElement('div');
     body.className = 'wbody';
-    const content = widgetBody(w.id);
+    const content = widgetBody(w.id, L.size);
     if (typeof content === 'string') body.innerHTML = content; else body.appendChild(content);
 
     const tools = document.createElement('div');
@@ -1698,30 +1776,48 @@ function statsBody(ym, label){
   const meta = sec('classMeta', []) || [];
   if (!att) return '<div class="empty">출결 기록이 없습니다</div>';
 
-  const count = { late:0, absent:0, early:0 };
+  const count = { absent:0, late:0, early:0, result:0 };
+  const people = {};                 // '반번호_학생번호' → {absent, late, early, result}
   Object.entries(att).forEach(([date, classes]) => {
     if (!date.startsWith(ym)) return;
-    Object.values(classes || {}).forEach(cls => {
-      Object.entries(cls || {}).forEach(([k, v]) => {
-        if (k === 'memos') return;
-        if (count[v] !== undefined) count[v]++;
+    Object.entries(classes || {}).forEach(([ci, cls]) => {
+      Object.entries(cls || {}).forEach(([si, v]) => {
+        if (si === 'memos' || count[v] === undefined) return;
+        count[v]++;
+        const key = `${ci}_${si}`;
+        (people[key] = people[key] || { ci:+ci, si:+si, absent:0, late:0, early:0, result:0 })[v]++;
       });
     });
   });
 
   const total = meta.reduce((a, c) => a + (c.count || 0), 0);
-  const sum = count.late + count.absent + count.early;
-  const max = Math.max(1, count.late, count.absent, count.early);
-  const bar = (nm, v, color) => `<div class="bar"><span class="nm">${nm}</span>
-    <span class="tr"><span class="fl" style="width:${(v / max * 100).toFixed(0)}%;background:${color}"></span></span>
-    <span class="vl">${v}</span></div>`;
+  const sum = count.absent + count.late + count.early + count.result;
+  const max = Math.max(1, count.absent, count.late, count.early, count.result);
+  const bar = (st) => `<div class="bar"><span class="nm">${ATT_NAME[st]}</span>
+    <span class="tr"><span class="fl" style="width:${(count[st] / max * 100).toFixed(0)}%;background:${ATT_COLOR[st]}"></span></span>
+    <span class="vl">${count[st]}</span></div>`;
+
+  // 이름별 — 명렬표를 켜 두었으면 이름으로, 아니면 번호로
+  const roster = sec('roster', null) || [];
+  const who = (p) => {
+    const cls = roster[p.ci];
+    const nm = cls && cls.students && cls.students[p.si];
+    const clsName = (meta[p.ci] && meta[p.ci].name) || (cls && cls.name) || `${p.ci + 1}반`;
+    return nm ? `${esc(nm)} <span class="sub" style="display:inline">${esc(clsName)}</span>`
+              : `${esc(clsName)} ${p.si + 1}번`;
+  };
+  const list = Object.values(people)
+    .map(p => ({ ...p, sum: p.absent + p.late + p.early + p.result }))
+    .sort((a, b) => b.sum - a.sum);
+
+  const names = list.length ? '<div style="margin-top:10px">' + list.map(p => {
+    const tags = ['absent','late','early','result'].filter(st => p[st]).map(st =>
+      `<span class="tag" style="background:${ATT_COLOR[st]}">${ATT_NAME[st]} ${p[st]}</span>`).join(' ');
+    return `<div class="issue"><span class="who">${who(p)}</span><span class="tags">${tags}</span></div>`;
+  }).join('') + '</div>' : '';
 
   return `<div class="sub" style="margin-bottom:6px">${label} · 학생 ${total}명${sum ? '' : ' · 기록 없음'}</div>
-    <div class="bars">
-      ${bar('지각', count.late, 'var(--warning)')}
-      ${bar('결석', count.absent, 'var(--danger)')}
-      ${bar('조퇴', count.early, 'var(--accent)')}
-    </div>`;
+    <div class="bars">${bar('absent')}${bar('late')}${bar('early')}${bar('result')}</div>${names}`;
 }
 
 function renderRosterTab(){
