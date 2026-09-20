@@ -138,8 +138,12 @@
     display:flex; align-items:center; justify-content:center; flex:none; }
 
   /* ── 편집 모드 ── */
-  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite; touch-action:none;
+  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite;
     user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+  /* 옮기려고 고른 위젯 */
+  .w.picked{ animation:none !important; outline:2.5px solid var(--accent); outline-offset:-1px;
+    box-shadow:var(--shadow-lifted); transform:scale(1.02); }
+  .w.target{ outline:2px dashed var(--accent); outline-offset:-1px; }
   body.editing .w:nth-child(even){ animation-delay:-1.2s; }
   @keyframes jiggle{ 0%,100%{ transform:rotate(-.35deg) } 50%{ transform:rotate(.35deg) } }
   body.editing .w.hidden{ display:block; opacity:.42; }
@@ -311,7 +315,7 @@
   <nav id="nav"></nav>
 
   <div class="editbar">
-    <span>카드를 끌어 옮기고, 아래 버튼으로 크기를 바꾸세요</span>
+    <span id="edit-hint">옮길 위젯을 누른 뒤, 바꿀 자리의 위젯을 누르세요</span>
     <button class="done" id="edit-done">완료</button>
   </div>
 </div>
@@ -852,11 +856,11 @@ function bindWidgetControls(card, id){
       renderGrid();
     });
   });
-  // 조작할 게 있는 위젯은 눌러서 상세 화면을 연다
-  if (id === 'roster' || id === 'progress' || id === 'stats'){
-    card.classList.add('tap');
-    card.addEventListener('click', () => { if (!editing) openDetail(id); });
-  }
+  card.addEventListener('click', () => {
+    if (editing){ pickWidget(id); return; }
+    if (id === 'roster' || id === 'progress' || id === 'stats') openDetail(id);
+  });
+  if (id === 'roster' || id === 'progress' || id === 'stats') card.classList.add('tap');
 }
 
 // ── 상세 시트 ──
@@ -1047,6 +1051,7 @@ function renderGrid(){
       `${svg(L.visible ? 'eye' : 'eyeoff','sm')}<b>${L.visible ? '숨기기' : '보이기'}</b></button>`;
     tools.addEventListener('click', (e) => {
       const btn = e.target.closest('.wtool'); if (!btn) return;
+      e.stopPropagation();     // 크기·숨김 버튼이 자리 바꾸기로 번지지 않게
       const act = btn.dataset.act;
       if (act === 'size') L.size = L.size === 2 ? 1 : 2;
       if (act === 'h') L.h = L.h === 1 ? 2 : 1;
@@ -1056,72 +1061,45 @@ function renderGrid(){
 
     card.append(head, body, tools);
     bindWidgetControls(card, w.id);
-    enableDrag(card);
     grid.appendChild(card);
   });
 }
 
-// ── 길게 눌러 옮기기 ──
-function enableDrag(card){
-  let holdTimer = null, dragging = false, startY = 0, startX = 0;
-  let edgeTimer = null, lastPoint = null;
+// ── 위젯 자리 바꾸기 ──
+// 휴대폰에서 드래그는 브라우저 스크롤·길게누르기와 자주 충돌한다.
+// 대신 '옮길 위젯을 누르고 → 바꿀 자리의 위젯을 누르는' 방식을 쓴다.
+let picked = null;
 
-  // 화면 위·아래 끝으로 끌면 목록이 따라 움직인다 (위젯이 많을 때 필요)
-  function edgeScroll(y){
-    const EDGE = 110, STEP = 14;
-    clearInterval(edgeTimer);
-    if (y < EDGE) edgeTimer = setInterval(() => window.scrollBy(0, -STEP), 16);
-    else if (y > window.innerHeight - EDGE) edgeTimer = setInterval(() => window.scrollBy(0, STEP), 16);
-  }
-  function stopEdge(){ clearInterval(edgeTimer); edgeTimer = null; }
-
-  function startDrag(){
-    if (dragging) return;
-    dragging = true;
-    card.classList.add('dragging');
-    if (navigator.vibrate) navigator.vibrate(12);
-  }
-
-  card.addEventListener('pointerdown', (e) => {
-    if (!editing) return;
-    startX = e.clientX; startY = e.clientY;
-    // 포인터를 먼저 붙잡아야 손가락이 카드 밖으로 나가도 이동이 이어진다
-    try { card.setPointerCapture(e.pointerId); } catch (err) {}
-    holdTimer = setTimeout(startDrag, 180);   // 가만히 눌러도 시작
-  });
-
-  card.addEventListener('pointermove', (e) => {
-    // 편집 모드에서는 조금만 움직여도 바로 끌기로 넘어간다
-    // (예전에는 손떨림을 취소로 처리해서 아예 안 움직였다)
-    if (!dragging){
-      if (!editing) return;
-      if (Math.abs(e.clientY - startY) > 6 || Math.abs(e.clientX - startX) > 6) startDrag();
-      else return;
-    }
-    e.preventDefault();
-    lastPoint = { x: e.clientX, y: e.clientY };
-    edgeScroll(e.clientY);
-    card.style.pointerEvents = 'none';
-    const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w');
-    card.style.pointerEvents = '';
-    if (under && under !== card && under.parentElement === card.parentElement){
-      const rect = under.getBoundingClientRect();
-      const after = e.clientY > rect.top + rect.height / 2;
-      under.parentElement.insertBefore(card, after ? under.nextSibling : under);
-    }
-  });
-
-  const end = () => {
-    clearTimeout(holdTimer); holdTimer = null;
-    stopEdge();
-    if (!dragging) return;
-    dragging = false;
-    card.classList.remove('dragging');
-    [...card.parentElement.children].forEach((el, i) => { if (layout[el.dataset.id]) layout[el.dataset.id].order = i; });
+function pickWidget(id){
+  if (picked === id){ clearPick(); return; }
+  if (picked){
+    const a = layout[picked], b = layout[id];
+    const tmp = a.order; a.order = b.order; b.order = tmp;   // 자리 맞교환
     saveLayout();
-  };
-  card.addEventListener('pointerup', end);
-  card.addEventListener('pointercancel', end);
+    clearPick();
+    renderGrid();
+    if (navigator.vibrate) navigator.vibrate(14);
+    return;
+  }
+  picked = id;
+  paintPick();
+  if (navigator.vibrate) navigator.vibrate(8);
+}
+
+function clearPick(){ picked = null; paintPick(); }
+
+function paintPick(){
+  document.querySelectorAll('#grid .w').forEach(c => {
+    c.classList.toggle('picked', c.dataset.id === picked);
+    c.classList.toggle('target', !!picked && c.dataset.id !== picked);
+  });
+  const bar = $('#edit-hint');
+  if (bar) {
+    const name = picked ? (WIDGETS.find(w => w.id === picked) || {}).title : '';
+    bar.textContent = picked
+      ? `‘${name}’ 위젯 이동 — 바꿀 자리의 위젯을 누르세요`
+      : '옮길 위젯을 누른 뒤, 바꿀 자리의 위젯을 누르세요';
+  }
 }
 
 // ── 목록 화면 ──
@@ -1158,7 +1136,7 @@ function renderLists(){
   if (document.activeElement !== memo) memo.value = sec('memo', '');
 }
 
-function render(){ renderGrid(); renderLists(); }
+function render(){ renderGrid(); renderLists(); if (editing) paintPick(); }
 
 // ── 입력 ──
 function addTodo(){
@@ -1214,7 +1192,8 @@ function setEditing(on){
   editing = on;
   document.body.classList.toggle('editing', on);
   $('#btn-edit').classList.toggle('on', on);
-  if (!on) renderGrid();
+  picked = null;
+  if (on) paintPick(); else renderGrid();
 }
 $('#btn-edit').addEventListener('click', () => setEditing(!editing));
 $('#edit-done').addEventListener('click', () => setEditing(false));
