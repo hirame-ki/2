@@ -176,28 +176,28 @@
 /* —— 3. CRIMSON (dark · refined) —— */
 [data-theme="crimson"] {
   --mode: dark;
-  --palette-bg: #15090C;
-  --palette-tint: radial-gradient(120% 80% at 0% 0%, rgba(255,90,110,0.07) 0%, transparent 60%);
+  --palette-bg: #151113;
+  --palette-tint: radial-gradient(120% 80% at 0% 100%, rgba(210,120,135,0.05) 0%, transparent 60%);
 
-  --card-bg-rgb: 38,18,24;
+  --card-bg-rgb: 32,23,26;
   --card-bg: rgba(var(--card-bg-rgb), var(--card-bg-alpha, 0.74));
-  --card-bg-solid: #261218;
-  --card-border: rgba(255,80,110,0.18);
-  --card-border-subtle: rgba(255,80,110,0.08);
+  --card-bg-solid: #20171A;
+  --card-border: rgba(215,130,145,0.16);
+  --card-border-subtle: rgba(215,130,145,0.07);
   --card-inner-highlight: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 22%);
 
-  --text-primary: #FBE9EC;
-  --text-secondary: #C99CA6;       /* lifted from #a07880 */
-  --text-tertiary: #8A6068;
+  --text-primary: #F3EBED;
+  --text-secondary: #C6B2B6;       /* lifted from #a07880 */
+  --text-tertiary: #9A8389;
 
-  --accent: #FF5566;
-  --accent-hover: #FF7A89;
-  --accent-soft: rgba(255,85,102,0.15);
-  --accent-glow: rgba(255,85,102,0.32);
+  --accent: #DE6070;
+  --accent-hover: #E97C8A;
+  --accent-soft: rgba(222,96,112,0.14);
+  --accent-glow: rgba(222,96,112,0.26);
   --accent-on: #ffffff;
 
-  --hover-bg: rgba(255,85,102,0.08);
-  --press-bg: rgba(255,85,102,0.14);
+  --hover-bg: rgba(215,130,145,0.07);
+  --press-bg: rgba(215,130,145,0.13);
   --divider: rgba(255,255,255,0.08);
 
   --shadow-widget:
@@ -210,18 +210,18 @@
 
   --input-bg: rgba(255,255,255,0.05);
   --input-bg-strong: rgba(255,255,255,0.09);
-  --input-border: rgba(255,80,110,0.20);
+  --input-border: rgba(215,130,145,0.20);
 
   --danger: #FF453A; --success: #30D158; --warning: #FF9F0A;
 
-  --widget-bg: #261218;
-  --border: rgba(255,85,102,0.22);
+  --widget-bg: #20171A;
+  --border: rgba(215,130,145,0.20);
   --table-row-alt: rgba(255,255,255,0.025);
-  --table-highlight: rgba(255,85,102,0.18);
-  --table-highlight-text: #FF8A9A;
+  --table-highlight: rgba(222,96,112,0.16);
+  --table-highlight-text: #EE96A2;
   --table-border: rgba(255,255,255,0.06);
-  --edit-bar-bg: rgba(220,40,60,0.95);
-  --guide-color: #FF5566;
+  --edit-bar-bg: rgba(178,58,74,0.95);
+  --guide-color: #DE6070;
 }
 
 /* —— 4. OCEAN (dark · refined) —— */
@@ -278,28 +278,28 @@
 /* —— 5. FOREST (dark · refined) —— */
 [data-theme="forest"] {
   --mode: dark;
-  --palette-bg: #07120C;
-  --palette-tint: radial-gradient(120% 80% at 0% 100%, rgba(60,200,120,0.07) 0%, transparent 60%);
+  --palette-bg: #0E1513;
+  --palette-tint: radial-gradient(120% 80% at 0% 100%, rgba(120,190,150,0.05) 0%, transparent 60%);
 
-  --card-bg-rgb: 18,34,24;
+  --card-bg-rgb: 24,33,29;
   --card-bg: rgba(var(--card-bg-rgb), var(--card-bg-alpha, 0.74));
-  --card-bg-solid: #122218;
-  --card-border: rgba(60,200,120,0.18);
-  --card-border-subtle: rgba(60,200,120,0.08);
+  --card-bg-solid: #18211D;
+  --card-border: rgba(130,195,160,0.16);
+  --card-border-subtle: rgba(130,195,160,0.07);
   --card-inner-highlight: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 22%);
 
-  --text-primary: #E0F5E6;
-  --text-secondary: #9CC4A8;       /* lifted from #68a87a */
-  --text-tertiary: #648870;
+  --text-primary: #ECF2EE;
+  --text-secondary: #B7C5BD;       /* lifted from #68a87a */
+  --text-tertiary: #8B9A92;
 
-  --accent: #3CD179;
-  --accent-hover: #5BDD90;
-  --accent-soft: rgba(60,209,121,0.15);
-  --accent-glow: rgba(60,209,121,0.32);
-  --accent-on: #062710;
+  --accent: #5CB683;
+  --accent-hover: #74C697;
+  --accent-soft: rgba(92,182,131,0.14);
+  --accent-glow: rgba(92,182,131,0.26);
+  --accent-on: #07150E;
 
-  --hover-bg: rgba(60,209,121,0.08);
-  --press-bg: rgba(60,209,121,0.14);
+  --hover-bg: rgba(130,195,160,0.07);
+  --press-bg: rgba(130,195,160,0.13);
   --divider: rgba(255,255,255,0.08);
 
   --shadow-widget:
@@ -312,45 +312,45 @@
 
   --input-bg: rgba(255,255,255,0.05);
   --input-bg-strong: rgba(255,255,255,0.09);
-  --input-border: rgba(60,200,120,0.20);
+  --input-border: rgba(130,195,160,0.20);
 
   --danger: #FF453A; --success: #5BDD90; --warning: #FF9F0A;
 
-  --widget-bg: #122218;
-  --border: rgba(60,200,120,0.22);
+  --widget-bg: #18211D;
+  --border: rgba(130,195,160,0.20);
   --table-row-alt: rgba(255,255,255,0.025);
-  --table-highlight: rgba(60,209,121,0.18);
-  --table-highlight-text: #75DBA0;
+  --table-highlight: rgba(92,182,131,0.16);
+  --table-highlight-text: #93D2AE;
   --table-border: rgba(255,255,255,0.06);
-  --edit-bar-bg: rgba(30,150,80,0.95);
-  --guide-color: #3CD179;
+  --edit-bar-bg: rgba(60,140,95,0.95);
+  --guide-color: #5CB683;
 }
 
 /* —— 6. AMBER (dark · refined; was hard to read with #FFB300 on amber surfaces) —— */
 [data-theme="amber"] {
   --mode: dark;
-  --palette-bg: #16100A;
-  --palette-tint: radial-gradient(120% 80% at 100% 100%, rgba(255,180,30,0.07) 0%, transparent 60%);
+  --palette-bg: #16130F;
+  --palette-tint: radial-gradient(120% 80% at 0% 100%, rgba(220,175,110,0.05) 0%, transparent 60%);
 
-  --card-bg-rgb: 40,30,18;
+  --card-bg-rgb: 33,28,22;
   --card-bg: rgba(var(--card-bg-rgb), var(--card-bg-alpha, 0.74));
-  --card-bg-solid: #281E12;
-  --card-border: rgba(255,180,30,0.18);
-  --card-border-subtle: rgba(255,180,30,0.08);
+  --card-bg-solid: #211C16;
+  --card-border: rgba(220,180,120,0.16);
+  --card-border-subtle: rgba(220,180,120,0.07);
   --card-inner-highlight: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 22%);
 
-  --text-primary: #F8ECD4;
-  --text-secondary: #C9B280;       /* lifted from #a09060 */
-  --text-tertiary: #8A7650;
+  --text-primary: #F2ECE2;
+  --text-secondary: #C7BBA8;       /* lifted from #a09060 */
+  --text-tertiary: #9B8F7D;
 
-  --accent: #FFB933;                /* slightly less yellow than #FFB300, better on cream text */
-  --accent-hover: #FFC85A;
-  --accent-soft: rgba(255,185,51,0.15);
-  --accent-glow: rgba(255,185,51,0.30);
-  --accent-on: #2A1D06;             /* dark text on amber buttons (Apple style) */
+  --accent: #D9A24A;                /* slightly less yellow than #FFB300, better on cream text */
+  --accent-hover: #E6B565;
+  --accent-soft: rgba(217,162,74,0.14);
+  --accent-glow: rgba(217,162,74,0.26);
+  --accent-on: #1B1407;             /* dark text on amber buttons (Apple style) */
 
-  --hover-bg: rgba(255,185,51,0.08);
-  --press-bg: rgba(255,185,51,0.14);
+  --hover-bg: rgba(220,180,120,0.07);
+  --press-bg: rgba(220,180,120,0.13);
   --divider: rgba(255,255,255,0.08);
 
   --shadow-widget:
@@ -363,18 +363,18 @@
 
   --input-bg: rgba(255,255,255,0.05);
   --input-bg-strong: rgba(255,255,255,0.09);
-  --input-border: rgba(255,180,30,0.20);
+  --input-border: rgba(220,180,120,0.20);
 
   --danger: #FF453A; --success: #30D158; --warning: #FFCC55;
 
-  --widget-bg: #281E12;
-  --border: rgba(255,180,30,0.22);
+  --widget-bg: #211C16;
+  --border: rgba(220,180,120,0.20);
   --table-row-alt: rgba(255,255,255,0.025);
-  --table-highlight: rgba(255,185,51,0.18);
-  --table-highlight-text: #FFCC55;
+  --table-highlight: rgba(217,162,74,0.16);
+  --table-highlight-text: #E9C07A;
   --table-border: rgba(255,255,255,0.06);
-  --edit-bar-bg: rgba(210,140,20,0.95);
-  --guide-color: #FFB933;
+  --edit-bar-bg: rgba(170,120,40,0.95);
+  --guide-color: #D9A24A;
 }
 
 /* —— 7. LAVENDER (light · refined; original secondary text was too pale) —— */
