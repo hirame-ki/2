@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보처리방침 · 쌤보드</title>
+<style>
+  :root{ --bg:#ffffff; --fg:#1d1d1f; --muted:#6b7280; --line:#e6e6ee; --accent:#0071e3; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --bg:#161618; --fg:#f2f2f4; --muted:#a1a1aa; --line:#2c2c30; --accent:#4da3ff; }
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+    font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:16px; }
+  .wrap{ max-width:760px; margin:0 auto; padding:56px 16px 80px; }
+  h1{ font-size:28px; margin:0 0 6px; letter-spacing:-0.02em; }
+  h2{ font-size:19px; margin:40px 0 10px; letter-spacing:-0.01em; }
+  h3{ font-size:16px; margin:24px 0 6px; }
+  p, li{ color:var(--fg); }
+  .meta{ color:var(--muted); font-size:14px; margin:0 0 28px; }
+  .note{ border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin:20px 0;
+    background:rgba(127,127,140,0.06); }
+  table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:14.5px; }
+  th, td{ border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top; }
+  th{ background:rgba(127,127,140,0.08); font-weight:700; }
+  code{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13.5px;
+    background:rgba(127,127,140,0.12); padding:1px 5px; border-radius:5px; word-break:break-all; }
+  a{ color:var(--accent); }
+  footer{ margin-top:56px; padding-top:20px; border-top:1px solid var(--line);
+    color:var(--muted); font-size:14px; }
+  ul{ padding-left:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>개인정보처리방침</h1>
+<p class="meta">쌤보드(SsamBoard) · 시행일 2026년 9월 20일</p>
+
+<p>쌤보드는 교사를 위한 무료 윈도우 바탕화면 위젯 프로그램입니다. 이 방침은 쌤보드가 이용자의 정보를 어떻게 다루는지 설명합니다.</p>
+
+<div class="note">
+  <b>핵심 요약</b><br>
+  쌤보드는 개발자 서버를 운영하지 않습니다. 이용자가 입력한 모든 자료는 <b>이용자 본인의 컴퓨터에만</b> 저장되며, 개발자는 그 내용을 열람할 수 없습니다.
+</div>
+
+<h2>1. 저장하는 정보와 저장 위치</h2>
+<p>학교 설정, 시간표, 명렬표, 성적·상담·진도 기록 등 쌤보드에서 입력하는 모든 자료는 이용자 컴퓨터의 앱 데이터 폴더에 파일로 저장됩니다. 개발자에게 전송되지 않으며, 별도의 회원가입이나 계정도 없습니다.</p>
+<p>프로그램을 삭제하거나 해당 폴더를 지우면 자료도 함께 사라집니다.</p>
+
+<h2>2. 구글 계정 연동 (휴대폰 연동 기능)</h2>
+<p>이용자가 설정에서 직접 연결한 경우에만 동작하는 선택 기능입니다.</p>
+
+<h3>요청하는 권한</h3>
+<table>
+  <tr><th>권한</th><th>용도</th></tr>
+  <tr>
+    <td><code>.../auth/calendar.app.created</code></td>
+    <td>쌤보드가 직접 만든 <b>"쌤보드" 캘린더</b>에 일정을 등록·수정·삭제합니다. 이용자의 기존 캘린더는 읽을 수도, 수정할 수도 없습니다.</td>
+  </tr>
+  <tr>
+    <td><code>openid</code>, <code>.../auth/userinfo.email</code></td>
+    <td>연결된 계정을 설정 화면에 표시하기 위해 이메일 주소를 확인합니다.</td>
+  </tr>
+</table>
+
+<h3>전송되는 내용</h3>
+<p>설정에서 켜 둔 항목만 전송됩니다. 달력 위젯에 등록한 일정, 학급 이벤트, NEIS 학사일정, 학생 생일 중에서 이용자가 직접 선택합니다. 학생 생일을 켜면 <b>학생 이름이 이용자 본인의 구글 계정에 저장</b>되므로, 필요하지 않다면 꺼 두시기 바랍니다.</p>
+<p>성적, 상담 기록, 학생부 자료는 어떤 경우에도 전송되지 않습니다.</p>
+
+<h3>데이터가 오가는 경로</h3>
+<p>이용자 컴퓨터와 이용자 본인의 구글 계정 사이에서만 직접 통신합니다. 개발자 서버를 거치지 않으며, 개발자는 전송 내용을 알 수 없습니다.</p>
+
+<h3>인증 정보 보관</h3>
+<p>구글이 발급한 인증 토큰은 운영체제의 암호화 기능(Windows DPAPI)으로 암호화해 이용자 컴퓨터에만 저장합니다. 외부로 전송되지 않습니다.</p>
+
+<h3>구글 사용자 데이터 이용 제한</h3>
+<p>쌤보드가 구글 API로 얻은 정보의 이용과 다른 앱으로의 전송은 <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API 서비스 사용자 데이터 정책</a>의 제한적 사용(Limited Use) 요건을 따릅니다. 해당 정보는 이용자에게 기능을 제공하는 목적에만 사용하며, 광고에 쓰거나 제3자에게 판매하지 않고, 인공지능 모델 학습에 사용하지 않습니다.</p>
+
+<h3>연결 해제 방법</h3>
+<ul>
+  <li>쌤보드 설정 → 휴대폰 연동 → <b>연결 해제</b></li>
+  <li>또는 <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">구글 계정 보안 설정</a>에서 쌤보드 액세스 권한 삭제</li>
+</ul>
+<p>연결을 해제해도 구글 캘린더에 이미 올라간 "쌤보드" 캘린더는 남아 있습니다. 필요하면 구글 캘린더에서 해당 캘린더를 직접 삭제하시면 됩니다.</p>
+
+<h2>3. 외부 서비스 연동</h2>
+<p>이용자가 해당 기능을 사용할 때만 필요한 정보가 각 서비스로 전달됩니다.</p>
+<table>
+  <tr><th>서비스</th><th>전달되는 정보</th></tr>
+  <tr><td>NEIS 교육정보 개방 포털</td><td>학교 코드 (급식·학사일정 조회)</td></tr>
+  <tr><td>컴시간알리미</td><td>학교 코드 (시간표 조회)</td></tr>
+  <tr><td>날씨 정보 서비스</td><td>이용자가 지정한 지역명</td></tr>
+  <tr><td>Groq, NVIDIA (AI 기능)</td><td>이용자가 AI 도구에 입력한 문장. 문제변형기·공문서 도우미·규정나침반·기록 정리 도우미 사용 시에만 해당</td></tr>
+  <tr><td>구글 캘린더</td><td>위 2항 참고</td></tr>
+</table>
+<p>AI 기능에 학생 실명이나 민감한 개인정보를 입력하지 않도록 주의해 주시기 바랍니다.</p>
+
+<h2>4. 개인정보 보호책임자</h2>
+<p>쌤보드는 이용자의 개인정보를 수집·보관하지 않으므로 별도의 처리 위탁이나 제3자 제공이 없습니다. 이 방침과 관련한 문의는 아래로 연락해 주십시오.</p>
+<ul>
+  <li>개발자: 황성재</li>
+  <li>이메일: <a href="mailto:esquire0@goedu.kr">esquire0@goedu.kr</a></li>
+</ul>
+
+<h2>5. 방침 변경</h2>
+<p>이 방침이 변경되면 이 페이지에 변경된 내용과 시행일을 게시합니다.</p>
+
+<footer>
+  쌤보드 · <a href="./">홈</a> · <a href="./terms.html">서비스 약관</a>
+</footer>
+
+</div>
+</body>
+</html>
