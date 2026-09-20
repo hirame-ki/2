@@ -137,7 +137,7 @@
     display:flex; align-items:center; justify-content:center; flex:none; }
 
   /* ── 편집 모드 ── */
-  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite; }
+  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite; touch-action:none; }
   body.editing .w:nth-child(even){ animation-delay:-1.2s; }
   @keyframes jiggle{ 0%,100%{ transform:rotate(-.35deg) } 50%{ transform:rotate(.35deg) } }
   body.editing .w.hidden{ display:block; opacity:.42; }
@@ -176,6 +176,41 @@
   @keyframes fade{ from{ opacity:0 } }
   @keyframes up{ from{ transform:translateY(100%) } }
   .sheet h3{ margin:0 0 14px; font-size:15px; font-weight:800; }
+  /* 날짜·요일 이동 */
+  .nav{ display:flex; align-items:center; gap:6px; margin-bottom:9px; }
+  .nav .lbl{ flex:1; text-align:center; font-size:12.5px; font-weight:700; color:var(--text-secondary); }
+  .nav button{ width:28px; height:28px; border-radius:9px; background:var(--input-bg);
+    color:var(--text-secondary); display:flex; align-items:center; justify-content:center; flex:none; }
+  .nav button:disabled{ opacity:.3; }
+  .days{ display:flex; gap:5px; margin-bottom:10px; }
+  .days button{ flex:1; height:29px; border-radius:9px; background:var(--input-bg);
+    font-size:12px; font-weight:700; color:var(--text-secondary); }
+  .days button.on{ background:var(--accent); color:var(--accent-on); }
+
+  /* 막대 그래프 */
+  .bars{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .bar{ display:flex; align-items:center; gap:8px; font-size:12px; }
+  .bar .nm{ width:34px; color:var(--text-secondary); font-weight:700; flex:none; }
+  .bar .tr{ flex:1; height:9px; border-radius:6px; background:var(--input-bg); overflow:hidden; }
+  .bar .fl{ height:100%; border-radius:6px; }
+  .bar .vl{ width:24px; text-align:right; font-weight:800; flex:none; }
+
+  /* 출결·진도 조작 */
+  .stu{ display:flex; align-items:center; gap:9px; padding:9px 0; border-bottom:1px solid var(--divider); }
+  .stu:last-child{ border-bottom:none; }
+  .stu .no{ width:26px; font-size:12px; color:var(--text-tertiary); font-weight:700; flex:none; }
+  .stu .nm{ flex:1; font-size:14px; }
+  .att{ display:flex; gap:4px; flex:none; }
+  .att button{ padding:6px 9px; border-radius:8px; font-size:11.5px; font-weight:700;
+    background:var(--input-bg); color:var(--text-secondary); }
+  .att button.on{ background:var(--accent); color:var(--accent-on); }
+  .att button.on[data-st="absent"]{ background:var(--danger); color:#fff; }
+  .att button.on[data-st="late"]{ background:var(--warning); color:#fff; }
+  .clsrow{ display:flex; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--divider); }
+  .clsrow:last-child{ border-bottom:none; }
+  .clsrow .nm{ flex:1; font-weight:700; }
+  .tap{ cursor:pointer; }
+
   .wrow{ display:flex; align-items:center; gap:11px; padding:12px 0; border-bottom:1px solid var(--divider); }
   .wrow:last-child{ border-bottom:none; }
   .wrow .nm{ flex:1; font-size:14px; font-weight:600; }
@@ -276,6 +311,14 @@
   <div class="editbar">
     <span>길게 눌러 옮기고, 아래 버튼으로 크기를 바꾸세요</span>
     <button class="done" id="edit-done">완료</button>
+  </div>
+</div>
+
+<div class="sheet" id="detail-sheet">
+  <div class="dim"></div>
+  <div class="panel">
+    <h3 id="detail-title"></h3>
+    <div id="detail-body"></div>
   </div>
 </div>
 
@@ -585,13 +628,16 @@ function widgetBody(id){
     const week = sec('weekTimetable', null);
     const tt = (week && week.tt) ? week.tt : (sec('timetable', {}) || {});
     const changed = (week && week.changed) || null;
-    const key = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-    const off = holidayLabel();
-    if (off) return `<div class="empty">${off}</div>`;
+    const key = view.timetable || DAY_KEYS[new Date().getDay()];
+    const picker = dayPicker('timetable', key);
+    if (!view.timetable){
+      const off = holidayLabel();
+      if (off) return picker + `<div class="empty">${off}</div>`;
+    }
     const cells = (tt[key] || []);
     const list = cells.map((v, i) => [i + 1, v, changed && changed[key] && changed[key][i]]).filter(([, v]) => v);
-    if (!list.length) return '<div class="empty">오늘 수업이 없습니다</div>';
-    return '<ul>' + list.map(([n, v, ch]) =>
+    if (!list.length) return picker + '<div class="empty">수업이 없습니다</div>';
+    return picker + '<ul>' + list.map(([n, v, ch]) =>
       `<li class="item"><div class="txt"><span class="chip">${n}</span>${esc(v)}` +
       (ch ? ' <span class="sub" style="display:inline;color:var(--warning)">변경</span>' : '') +
       `</div></li>`).join('') + '</ul>';
@@ -603,9 +649,15 @@ function widgetBody(id){
   }
   if (id === 'meal'){
     const days = sec('meals', null);
-    const today = days && days[t];
-    if (!today || !today.length) return '<div class="empty">오늘 급식 정보가 없습니다</div>';
-    return today.map(m => {
+    const iso = shiftDay(view.meal);
+    const today = days && days[iso];
+    const nav = `<div class="nav" data-nav="meal">
+        <button data-step="-1" ${view.meal <= 0 ? 'disabled' : ''}>‹</button>
+        <span class="lbl">${view.meal === 0 ? '오늘' : dayLabel(iso)}</span>
+        <button data-step="1" ${view.meal >= 14 ? 'disabled' : ''}>›</button>
+      </div>`;
+    if (!today || !today.length) return nav + '<div class="empty">급식 정보가 없습니다</div>';
+    return nav + today.map(m => {
       const menu = String(m.menu || '').split('\n')
         .map(x => x.replace(/\([^)]*\)/g, '').trim()).filter(Boolean).join(' · ');
       return `<div style="margin-bottom:8px"><span class="chip">${esc(m.type)}</span>
@@ -616,11 +668,13 @@ function widgetBody(id){
   if (id === 'timer') return timerBody();
   if (id === 'classtable'){
     const ct = sec('classTimetable', null);
-    const dayIdx = new Date().getDay() - 1;            // 0=월 … 4=금
-    if (!ct || !ct.cells || dayIdx < 0 || dayIdx > 4) return '<div class="empty">오늘은 학급 수업이 없습니다</div>';
+    const key = view.classtable || DAY_KEYS[new Date().getDay()];
+    const picker = dayPicker('classtable', key);
+    const dayIdx = DAY_KEYS.indexOf(key) - 1;          // 0=월 … 4=금
+    if (!ct || !ct.cells || dayIdx < 0 || dayIdx > 4) return picker + '<div class="empty">학급 수업이 없습니다</div>';
     const list = ct.cells.map(row => (row || [])[dayIdx] || '').map((v, i) => [i + 1, v]).filter(([, v]) => v);
-    if (!list.length) return '<div class="empty">오늘 학급 수업이 없습니다</div>';
-    return '<ul>' + list.map(([n, v]) =>
+    if (!list.length) return picker + '<div class="empty">학급 수업이 없습니다</div>';
+    return picker + '<ul>' + list.map(([n, v]) =>
       `<li class="item"><div class="txt"><span class="chip">${n}</span>${esc(v)}</div></li>`).join('') + '</ul>';
   }
   if (id === 'stats'){
@@ -639,32 +693,66 @@ function widgetBody(id){
       });
     });
     const total = meta.reduce((a, c) => a + (c.count || 0), 0);
-    return `<div class="sub" style="margin-bottom:7px">이번 달 · 학생 ${total}명</div>
-      <div class="row" style="gap:16px">
-        <div><div class="sub">지각</div><b style="font-size:18px">${count.late}</b></div>
-        <div><div class="sub">결석</div><b style="font-size:18px">${count.absent}</b></div>
-        <div><div class="sub">조퇴</div><b style="font-size:18px">${count.early}</b></div>
+    const max = Math.max(1, count.late, count.absent, count.early);
+    const bar = (nm, v, color) => `<div class="bar"><span class="nm">${nm}</span>
+      <span class="tr"><span class="fl" style="width:${(v / max * 100).toFixed(0)}%;background:${color}"></span></span>
+      <span class="vl">${v}</span></div>`;
+    return `<div class="sub" style="margin-bottom:6px">이번 달 · 학생 ${total}명</div>
+      <div class="bars">
+        ${bar('지각', count.late, 'var(--warning)')}
+        ${bar('결석', count.absent, 'var(--danger)')}
+        ${bar('조퇴', count.early, 'var(--accent)')}
       </div>`;
   }
   if (id === 'roster'){
     const roster = sec('roster', null);
     if (!roster || !roster.length)
       return '<div class="empty">PC 설정 → 휴대폰 연동에서<br>명렬표 포함을 켜면 보입니다</div>';
-    return roster.map(c => `<div style="margin-bottom:9px">
-      <span class="chip">${esc(c.name)}</span><span class="sub" style="display:inline">${c.students.length}명</span>
-      <div class="txt" style="margin-top:5px;font-size:13px;color:var(--text-secondary)">${esc(c.students.join(', '))}</div>
-    </div>`).join('');
+    const att = sec('attendance', {})[t] || {};
+    return '<ul>' + roster.map((c, ci) => {
+      const marked = Object.entries(att[ci] || {})
+        .filter(([k, v]) => k !== 'memos' && v && v !== 'present').length;
+      return `<li class="clsrow"><span class="chip">${esc(c.name)}</span>
+        <span class="nm">${c.students.length}명</span>
+        <span class="sub" style="display:inline">${marked ? '오늘 특이 ' + marked + '명' : '전원 출석'}</span>
+        <span style="color:var(--text-tertiary)">›</span></li>`;
+    }).join('') + '</ul>';
   }
   if (id === 'progress'){
     const p = sec('progressData', null);
-    const units = p?.units ? Object.keys(p.units).length : 0;
-    const subjects = p?.subjects?.length || 0;
-    if (!units && !subjects) return '<div class="empty">진도 자료가 없습니다</div>';
-    return `<div class="row" style="gap:20px">
-      <div><div class="sub">과목</div><b style="font-size:19px">${subjects}</b></div>
-      <div><div class="sub">단원</div><b style="font-size:19px">${units}</b></div></div>`;
+    if (!p || !(p.classes || []).length) return '<div class="empty">진도 자료가 없습니다</div>';
+    const lessons = p.lessons || [];
+    const done = p.progress || {};
+    return '<div class="bars">' + (p.classes || []).map(c => {
+      const total = lessons.length || 1;
+      const n = lessons.filter(l => done[`${c.id}_${l.id}`] === 'done').length;
+      return `<div class="bar"><span class="nm">${esc(c.name)}</span>
+        <span class="tr"><span class="fl" style="width:${(n / total * 100).toFixed(0)}%;background:var(--accent)"></span></span>
+        <span class="vl">${n}/${total}</span></div>`;
+    }).join('') + '</div>';
   }
   return '';
+}
+
+// 위젯마다 지금 어느 날짜·요일을 보고 있는지
+const view = { meal: 0, timetable: null, classtable: null };
+const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
+const DAY_NAMES = ['일','월','화','수','목','금','토'];
+const ATT = [['present','출석'], ['late','지각'], ['absent','결석'], ['early','조퇴']];
+
+function shiftDay(offset){
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function dayLabel(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${DAY_NAMES[d.getDay()]})`;
+}
+// 위젯 안의 작은 버튼이 카드 전체 탭과 겹치지 않게 한다
+function stopTap(el){
+  el.addEventListener('pointerdown', e => e.stopPropagation());
+  el.addEventListener('click', e => e.stopPropagation());
 }
 
 // ── 교시 타이머 ──
@@ -723,6 +811,197 @@ setInterval(() => {
   if (card && !card.classList.contains('hidden')) card.querySelector('.wbody').innerHTML = timerBody();
 }, 20000);
 
+// 요일 선택 줄 (월~금)
+function dayPicker(widget, active){
+  return '<div class="days" data-days="' + widget + '">' +
+    ['mon','tue','wed','thu','fri'].map(k =>
+      `<button data-day="${k}" class="${k === active ? 'on' : ''}">${DAY_NAMES[DAY_KEYS.indexOf(k)]}</button>`
+    ).join('') + '</div>';
+}
+
+// 카드 안의 날짜·요일 버튼 연결
+function bindWidgetControls(card, id){
+  card.querySelectorAll('[data-days] button').forEach(btn => {
+    stopTap(btn);
+    btn.addEventListener('click', () => {
+      view[card.querySelector('[data-days]').dataset.days] = btn.dataset.day;
+      renderGrid();
+    });
+  });
+  card.querySelectorAll('[data-nav] button').forEach(btn => {
+    stopTap(btn);
+    btn.addEventListener('click', () => {
+      const key = card.querySelector('[data-nav]').dataset.nav;
+      view[key] = Math.max(0, Math.min(14, view[key] + Number(btn.dataset.step)));
+      renderGrid();
+    });
+  });
+  // 조작할 게 있는 위젯은 눌러서 상세 화면을 연다
+  if (id === 'roster' || id === 'progress' || id === 'stats'){
+    card.classList.add('tap');
+    card.addEventListener('click', () => { if (!editing) openDetail(id); });
+  }
+}
+
+// ── 상세 시트 ──
+function openDetail(id, arg){
+  const title = { roster:'명렬표 · 출결', progress:'진도 체크', stats:'학급 통계' }[id] || '';
+  $('#detail-title').textContent = title;
+  $('#detail-body').innerHTML = '';
+  if (id === 'roster') renderRosterDetail(arg);
+  if (id === 'progress') renderProgressDetail(arg);
+  if (id === 'stats') renderStatsDetail();
+  $('#detail-sheet').classList.add('show');
+}
+$('#detail-sheet .dim').addEventListener('click', () => $('#detail-sheet').classList.remove('show'));
+
+// 명렬표 → 반 목록 → 학생별 출결
+function renderRosterDetail(classIdx){
+  const body = $('#detail-body');
+  const roster = sec('roster', null) || [];
+  if (!roster.length){
+    body.innerHTML = '<div class="empty">PC 설정에서 명렬표 포함을 켜면 보입니다</div>';
+    return;
+  }
+  const t = todayStr();
+
+  if (classIdx === undefined){
+    body.innerHTML = '<ul>' + roster.map((c, i) =>
+      `<li class="clsrow tap" data-ci="${i}"><span class="chip">${esc(c.name)}</span>
+        <span class="nm">${c.students.length}명</span>
+        <span style="color:var(--text-tertiary)">›</span></li>`).join('') + '</ul>';
+    body.querySelectorAll('[data-ci]').forEach(row =>
+      row.addEventListener('click', () => renderRosterDetail(Number(row.dataset.ci))));
+    return;
+  }
+
+  const cls = roster[classIdx];
+  $('#detail-title').textContent = `${cls.name} · ${dayLabel(t)}`;
+  const att = sec('attendance', {});
+  const today = att[t] || {};
+  const mine = today[classIdx] || {};
+
+  body.innerHTML =
+    `<button class="wtool" id="back-cls" style="margin-bottom:10px;height:32px;width:auto;padding:0 12px">← 반 목록</button>` +
+    '<ul>' + cls.students.map((nm, si) => {
+      const cur = mine[si] || 'present';
+      return `<li class="stu"><span class="no">${si + 1}</span><span class="nm">${esc(nm)}</span>
+        <span class="att" data-si="${si}">` +
+        ATT.map(([k, label]) =>
+          `<button data-st="${k}" class="${cur === k ? 'on' : ''}">${label}</button>`).join('') +
+        '</span></li>';
+    }).join('') + '</ul>';
+
+  body.querySelector('#back-cls').addEventListener('click', () => {
+    $('#detail-title').textContent = '명렬표 · 출결';
+    renderRosterDetail();
+  });
+
+  body.querySelectorAll('.att').forEach(group => {
+    const si = group.dataset.si;
+    group.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      const status = btn.dataset.st;
+      const all = sec('attendance', {});
+      if (!all[t]) all[t] = {};
+      if (!all[t][classIdx]) all[t][classIdx] = { memos: {} };
+      const slot = all[t][classIdx];
+      if (status === 'present') delete slot[si]; else slot[si] = status;
+      if (!slot.memos) slot.memos = {};
+      touch('attendance', all);
+      group.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+      renderGrid();
+    }));
+  });
+}
+
+// 진도 → 반별 차시 체크
+function renderProgressDetail(classId){
+  const body = $('#detail-body');
+  const p = sec('progressData', null);
+  if (!p || !(p.classes || []).length){
+    body.innerHTML = '<div class="empty">진도 자료가 없습니다</div>';
+    return;
+  }
+  const lessons = p.lessons || [];
+  const done = p.progress || {};
+
+  if (!classId){
+    body.innerHTML = '<ul>' + (p.classes || []).map(c => {
+      const n = lessons.filter(l => done[`${c.id}_${l.id}`] === 'done').length;
+      return `<li class="clsrow tap" data-cid="${c.id}"><span class="chip">${esc(c.name)}</span>
+        <span class="nm">${n} / ${lessons.length} 차시</span>
+        <span style="color:var(--text-tertiary)">›</span></li>`;
+    }).join('') + '</ul>';
+    body.querySelectorAll('[data-cid]').forEach(row =>
+      row.addEventListener('click', () => renderProgressDetail(row.dataset.cid)));
+    return;
+  }
+
+  const cls = (p.classes || []).find(c => c.id === classId);
+  const units = p.units || {};
+  $('#detail-title').textContent = `${cls ? cls.name : ''} 진도`;
+  body.innerHTML =
+    `<button class="wtool" id="back-prog" style="margin-bottom:10px;height:32px;width:auto;padding:0 12px">← 반 목록</button>` +
+    '<ul>' + lessons.map(l => {
+      const unit = Object.values(units).find(u => u.id === l.unitId);
+      const on = done[`${classId}_${l.id}`] === 'done';
+      return `<li class="item tap" data-lid="${l.id}">
+        <span class="check ${on ? 'on' : ''}">${on ? svg('check','sm') : ''}</span>
+        <span class="txt">${esc(l.name)}차시${unit ? `<span class="sub">${esc(unit.name)}</span>` : ''}</span></li>`;
+    }).join('') + '</ul>';
+
+  body.querySelector('#back-prog').addEventListener('click', () => {
+    $('#detail-title').textContent = '진도 체크';
+    renderProgressDetail();
+  });
+
+  body.querySelectorAll('[data-lid]').forEach(row => row.addEventListener('click', () => {
+    const data = sec('progressData', {});
+    if (!data.progress) data.progress = {};
+    const key = `${classId}_${row.dataset.lid}`;
+    const on = data.progress[key] === 'done';
+    if (on) delete data.progress[key]; else data.progress[key] = 'done';
+    touch('progressData', data);
+    renderProgressDetail(classId);
+    renderGrid();
+  }));
+}
+
+// 통계 → 반별 막대
+function renderStatsDetail(){
+  const body = $('#detail-body');
+  const att = sec('attendance', null);
+  const meta = sec('classMeta', []) || [];
+  if (!att){ body.innerHTML = '<div class="empty">출결 기록이 없습니다</div>'; return; }
+  const ym = todayStr().slice(0, 7);
+  const per = {};
+  Object.entries(att).forEach(([date, classes]) => {
+    if (!date.startsWith(ym)) return;
+    Object.entries(classes || {}).forEach(([ci, cls]) => {
+      const c = per[ci] || (per[ci] = { late:0, absent:0, early:0 });
+      Object.entries(cls || {}).forEach(([k, v]) => {
+        if (k !== 'memos' && c[v] !== undefined) c[v]++;
+      });
+    });
+  });
+  const rows = Object.entries(per);
+  if (!rows.length){ body.innerHTML = '<div class="empty">이번 달 기록이 없습니다</div>'; return; }
+  const max = Math.max(1, ...rows.map(([, c]) => c.late + c.absent + c.early));
+  body.innerHTML = `<div class="sub" style="margin-bottom:10px">${ym.replace('-', '년 ')}월 · 반별 누계</div>` +
+    rows.map(([ci, c]) => {
+      const nm = meta[ci]?.name || `${Number(ci) + 1}반`;
+      const sum = c.late + c.absent + c.early;
+      const seg = (v, color) => v ? `<span class="fl" style="width:${(v / max * 100).toFixed(0)}%;background:${color};display:inline-block;height:100%"></span>` : '';
+      return `<div class="bar" style="margin-bottom:9px"><span class="nm">${esc(nm)}</span>
+        <span class="tr" style="display:flex">${seg(c.late, 'var(--warning)')}${seg(c.absent, 'var(--danger)')}${seg(c.early, 'var(--accent)')}</span>
+        <span class="vl">${sum}</span></div>`;
+    }).join('') +
+    `<div class="sub" style="margin-top:12px">
+      <span style="color:var(--warning)">■</span> 지각
+      <span style="color:var(--danger)">■</span> 결석
+      <span style="color:var(--accent)">■</span> 조퇴</div>`;
+}
+
 function renderGrid(){
   const grid = $('#grid');
   grid.innerHTML = '';
@@ -760,6 +1039,7 @@ function renderGrid(){
     });
 
     card.append(head, body, tools);
+    bindWidgetControls(card, w.id);
     enableDrag(card);
     grid.appendChild(card);
   });
@@ -768,26 +1048,40 @@ function renderGrid(){
 // ── 길게 눌러 옮기기 ──
 function enableDrag(card){
   let holdTimer = null, dragging = false, startY = 0, startX = 0;
+  let edgeTimer = null, lastPoint = null;
+
+  // 화면 위·아래 끝으로 끌면 목록이 따라 움직인다 (위젯이 많을 때 필요)
+  function edgeScroll(y){
+    const EDGE = 110, STEP = 14;
+    clearInterval(edgeTimer);
+    if (y < EDGE) edgeTimer = setInterval(() => window.scrollBy(0, -STEP), 16);
+    else if (y > window.innerHeight - EDGE) edgeTimer = setInterval(() => window.scrollBy(0, STEP), 16);
+  }
+  function stopEdge(){ clearInterval(edgeTimer); edgeTimer = null; }
 
   card.addEventListener('pointerdown', (e) => {
     if (!editing) return;
     startX = e.clientX; startY = e.clientY;
+    // 포인터를 먼저 붙잡아야 손가락이 카드 밖으로 나가도 이동이 이어진다
+    try { card.setPointerCapture(e.pointerId); } catch (err) {}
     holdTimer = setTimeout(() => {
       dragging = true;
       card.classList.add('dragging');
-      card.setPointerCapture(e.pointerId);
       if (navigator.vibrate) navigator.vibrate(12);
-    }, 220);
+    }, 200);
   });
 
   card.addEventListener('pointermove', (e) => {
     if (!dragging){
-      if (holdTimer && (Math.abs(e.clientY - startY) > 9 || Math.abs(e.clientX - startX) > 9)){
+      if (holdTimer && (Math.abs(e.clientY - startY) > 14 || Math.abs(e.clientX - startX) > 14)){
         clearTimeout(holdTimer); holdTimer = null;
+        try { card.releasePointerCapture(e.pointerId); } catch (err) {}
       }
       return;
     }
     e.preventDefault();
+    lastPoint = { x: e.clientX, y: e.clientY };
+    edgeScroll(e.clientY);
     card.style.pointerEvents = 'none';
     const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w');
     card.style.pointerEvents = '';
@@ -800,6 +1094,7 @@ function enableDrag(card){
 
   const end = () => {
     clearTimeout(holdTimer); holdTimer = null;
+    stopEdge();
     if (!dragging) return;
     dragging = false;
     card.classList.remove('dragging');

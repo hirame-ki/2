@@ -2,7 +2,7 @@
 // · 홈 화면 추가(설치)를 하려면 크롬이 fetch 처리기를 가진 서비스 워커를 요구한다
 // · 화면 구성 파일만 캐시한다. 구글 API 응답은 절대 캐시하지 않는다(개인 자료)
 
-const CACHE = 'ssamboard-m-v1';
+const CACHE = 'ssamboard-m-v2';
 const SHELL = ['./m.html', './m-theme.css', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
