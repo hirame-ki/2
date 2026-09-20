@@ -214,6 +214,16 @@
   .cal-txt{ font-size:9px; line-height:1.25; color:var(--text-secondary);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
+  /* 위젯 안의 작은 달력 */
+  .cal-mini .cal-cell{ min-height:31px; padding:2px 1px; align-items:center; justify-content:flex-start; gap:2px; }
+  .cal-mini .cal-cell .d{ font-size:10.5px; }
+  .cal-mini .cal-hd{ font-size:9.5px; padding:1px 0; }
+  .cal-mini .dots{ display:flex; gap:2px; justify-content:center; }
+  .cal-mini .dots i{ width:4px; height:4px; border-radius:50%; background:var(--accent); display:block; }
+  .cal-mini .dots i.neis{ background:var(--warning); }
+  .cal-mini .dots i.off{ background:var(--danger); }
+  .cal-mini .dots i.todo{ background:var(--success); }
+
   /* ── 포스트잇 ── */
   .sticky{ border-radius:14px; padding:14px 15px; margin-bottom:10px; position:relative;
     box-shadow:var(--shadow-widget); min-height:78px; white-space:pre-wrap; font-size:14px;
@@ -273,6 +283,14 @@
   .att button.on{ background:var(--accent); color:var(--accent-on); }
   .att button.on[data-st="absent"]{ background:var(--danger); color:#fff; }
   .att button.on[data-st="late"]{ background:var(--warning); color:#fff; }
+  .lsn{ padding:12px 0; border-bottom:1px solid var(--divider); }
+  .lsn:last-child{ border-bottom:none; }
+  .lsn .att{ display:flex; gap:6px; }
+  .lsn .att button{ flex:1; padding:8px 0; font-size:12px; }
+  .lsn .att button.on[data-st="going"]{ background:var(--warning); color:#fff; }
+  .lsn .att button.on[data-st="undone"]{ background:var(--input-bg-strong); color:var(--text-secondary); }
+  .lsn .memo{ margin-top:8px; font-size:13px; padding:9px 11px; }
+
   .clsrow{ display:flex; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--divider); }
   .clsrow:last-child{ border-bottom:none; }
   .clsrow .nm{ flex:1; font-weight:700; }
@@ -356,9 +374,14 @@
     <section data-tab="todo" class="hide" style="margin-top:2px">
       <div class="w" data-size="2" style="animation:none">
         <div class="row">
-          <input type="text" id="todo-input" placeholder="할일을 입력하세요" enterkeyhint="done">
+          <input type="text" id="todo-input" placeholder="할 일을 입력하세요" enterkeyhint="done">
           <button class="add" id="todo-add" aria-label="추가"></button>
         </div>
+        <div class="row" style="margin-top:8px">
+          <input type="date" id="todo-due" style="flex:1">
+          <button class="wtool" id="todo-due-clear" style="width:auto;padding:0 12px;height:38px">지우기</button>
+        </div>
+        <div class="sub" style="margin-top:6px">마감일을 넣으면 학사일정 달력에도 표시됩니다</div>
       </div>
       <div class="w" data-size="2" style="margin-top:12px;animation:none"><ul id="todo-list"></ul></div>
     </section>
@@ -813,13 +836,19 @@ function widgetBody(id){
     return ul;
   }
   if (id === 'event'){
-    const near = flatEvents().filter(e => e.date >= t).slice(0, 5);
-    if (!near.length) return '<div class="empty">다가오는 일정이 없습니다</div>';
-    return '<ul>' + near.map(e => {
-      const d = Math.round((new Date(e.date) - new Date(t)) / 86400000);
-      const label = d === 0 ? '오늘' : d === 1 ? '내일' : 'D-' + d;
-      return `<li class="item"><div class="txt"><span class="chip">${label}</span>${esc(e.name)}</div></li>`;
-    }).join('') + '</ul>';
+    const { y, m } = calState();
+    return `<div class="nav" data-cal="month">
+        <button data-cstep="-1">‹</button>
+        <span class="lbl">${y}년 ${m + 1}월</span>
+        <button data-cstep="1">›</button>
+      </div>
+      <div class="cal-grid cal-mini" data-calgrid="1">${calendarCells({ y, m, mini: true, pick: calPick })}</div>
+      <div class="sub" style="margin-top:7px;text-align:center">
+        <span style="color:var(--danger)">●</span> 휴업
+        <span style="color:var(--warning)">●</span> 학사일정
+        <span style="color:var(--accent)">●</span> 내 일정
+        <span style="color:var(--success)">●</span> 할 일
+      </div>`;
   }
   if (id === 'dday'){
     const dd = sec('ddays', []);
@@ -922,13 +951,17 @@ function widgetBody(id){
     const p = sec('progressData', null);
     if (!p || !(p.classes || []).length) return '<div class="empty">진도 자료가 없습니다</div>';
     const lessons = p.lessons || [];
-    const done = p.progress || {};
+    const st = p.progress || {};
     return '<div class="bars">' + (p.classes || []).map(c => {
       const total = lessons.length || 1;
-      const n = lessons.filter(l => done[`${c.id}_${l.id}`] === 'done').length;
+      const done  = lessons.filter(l => st[`${c.id}_${l.id}`] === 'done').length;
+      const going = lessons.filter(l => st[`${c.id}_${l.id}`] === 'going').length;
       return `<div class="bar"><span class="nm">${esc(c.name)}</span>
-        <span class="tr"><span class="fl" style="width:${(n / total * 100).toFixed(0)}%;background:var(--accent)"></span></span>
-        <span class="vl">${n}/${total}</span></div>`;
+        <span class="tr" style="display:flex">
+          <span class="fl" style="width:${(done / total * 100).toFixed(0)}%;background:var(--accent)"></span>
+          <span class="fl" style="width:${(going / total * 100).toFixed(0)}%;background:var(--warning);border-radius:0"></span>
+        </span>
+        <span class="vl">${done}/${total}</span></div>`;
     }).join('') + '</div>';
   }
   return '';
@@ -1064,6 +1097,26 @@ function bindWidgetControls(card, id){
       if (next){ view[key] = next.start; renderGrid(); }
     });
   });
+  // 위젯 달력 — 월 이동과 날짜 선택
+  card.querySelectorAll('[data-cal] button').forEach(btn => {
+    stopTap(btn);
+    btn.addEventListener('click', () => {
+      const st = calState();
+      const d = new Date(st.y, st.m + Number(btn.dataset.cstep), 1);
+      calYM = { y: d.getFullYear(), m: d.getMonth() };
+      renderGrid();
+      if (tab === 'event') renderCalendar();
+    });
+  });
+  card.querySelectorAll('[data-calgrid] [data-iso]').forEach(cell => {
+    stopTap(cell);
+    cell.addEventListener('click', () => {
+      if (editing) { pickWidget(id); return; }
+      calPick = cell.dataset.iso;
+      if (tabIds().includes('event')) go('event');     // 일정 화면이 있으면 그리로
+      else { renderGrid(); openDetail('day'); }        // 없으면 그 자리에서 목록만
+    });
+  });
   card.querySelectorAll('[data-nav] button').forEach(btn => {
     stopTap(btn);
     btn.addEventListener('click', () => {
@@ -1082,12 +1135,23 @@ function bindWidgetControls(card, id){
 // ── 상세 시트 ──
 function openDetail(id, arg){
   const title = { roster:'명렬표 · 출결', progress:'진도 체크', stats:'학급 통계' }[id] || '';
-  $('#detail-title').textContent = title;
+  $('#detail-title').textContent = id === 'day' ? dayLabel(calPick) : title;
   $('#detail-body').innerHTML = '';
   if (id === 'roster') renderRosterDetail(arg);
   if (id === 'progress') renderProgressDetail(arg);
   if (id === 'stats') renderStatsDetail();
+  if (id === 'day') renderDayDetail();
   $('#detail-sheet').classList.add('show');
+}
+
+// 홈 위젯에서 날짜를 눌렀을 때 — 그날 일정만 보여 준다
+function renderDayDetail(){
+  const items = dayItems(calPick);
+  const chip = { neis:'학사', off:'휴업', mine:'내 일정', todo:'할 일', dday:'D-DAY' };
+  $('#detail-body').innerHTML = items.length
+    ? '<ul>' + items.map(x =>
+        `<li class="item"><div class="txt"><span class="chip">${chip[x.kind]}</span>${esc(x.name)}</div></li>`).join('') + '</ul>'
+    : '<div class="empty">일정이 없습니다</div>';
 }
 $('#detail-sheet .dim').addEventListener('click', () => $('#detail-sheet').classList.remove('show'));
 
@@ -1165,8 +1229,10 @@ function renderProgressDetail(classId){
   if (!classId){
     body.innerHTML = '<ul>' + (p.classes || []).map(c => {
       const n = lessons.filter(l => done[`${c.id}_${l.id}`] === 'done').length;
+      const g = lessons.filter(l => done[`${c.id}_${l.id}`] === 'going').length;
       return `<li class="clsrow tap" data-cid="${c.id}"><span class="chip">${esc(c.name)}</span>
-        <span class="nm">${n} / ${lessons.length} 차시</span>
+        <span class="nm">완료 ${n} / ${lessons.length} 차시</span>
+        ${g ? `<span class="sub" style="display:inline;color:var(--warning)">진행중 ${g}</span>` : ''}
         <span style="color:var(--text-tertiary)">›</span></li>`;
     }).join('') + '</ul>';
     body.querySelectorAll('[data-cid]').forEach(row =>
@@ -1176,15 +1242,27 @@ function renderProgressDetail(classId){
 
   const cls = (p.classes || []).find(c => c.id === classId);
   const units = p.units || {};
+  const memos = p.memos || {};
   $('#detail-title').textContent = `${cls ? cls.name : ''} 진도`;
+
+  const STATES = [['undone','미완료'], ['going','진행중'], ['done','완료']];
+
   body.innerHTML =
     `<button class="wtool" id="back-prog" style="margin-bottom:10px;height:32px;width:auto;padding:0 12px">← 반 목록</button>` +
     '<ul>' + lessons.map(l => {
+      const key = `${classId}_${l.id}`;
+      const st = done[key] || 'undone';
       const unit = Object.values(units).find(u => u.id === l.unitId);
-      const on = done[`${classId}_${l.id}`] === 'done';
-      return `<li class="item tap" data-lid="${l.id}">
-        <span class="check ${on ? 'on' : ''}">${on ? svg('check','sm') : ''}</span>
-        <span class="txt">${esc(l.name)}차시${unit ? `<span class="sub">${esc(unit.name)}</span>` : ''}</span></li>`;
+      return `<li class="lsn" data-lid="${l.id}">
+        <div class="txt" style="margin-bottom:7px">${esc(l.name)}차시${unit ? `<span class="sub">${esc(unit.name)}</span>` : ''}</div>
+        <div class="att" data-lstate="${l.id}">` +
+          STATES.map(([v, label]) =>
+            `<button data-st="${v}" class="${st === v ? 'on' : ''}">${label}</button>`).join('') +
+        `</div>
+        <input class="memo ${st === 'going' ? '' : 'hide'}" data-memo="${l.id}"
+               type="text" placeholder="어디까지 했는지 간단히 적어두세요"
+               value="${esc(memos[key] || '')}">
+      </li>`;
     }).join('') + '</ul>';
 
   body.querySelector('#back-prog').addEventListener('click', () => {
@@ -1192,16 +1270,45 @@ function renderProgressDetail(classId){
     renderProgressDetail();
   });
 
-  body.querySelectorAll('[data-lid]').forEach(row => row.addEventListener('click', () => {
-    const data = sec('progressData', {});
-    if (!data.progress) data.progress = {};
-    const key = `${classId}_${row.dataset.lid}`;
-    const on = data.progress[key] === 'done';
-    if (on) delete data.progress[key]; else data.progress[key] = 'done';
-    touch('progressData', data);
-    renderProgressDetail(classId);
-    renderGrid();
-  }));
+  // 상태 바꾸기 — 진행중일 때만 메모 칸이 열린다
+  body.querySelectorAll('[data-lstate]').forEach(group => {
+    const lid = group.dataset.lstate;
+    group.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      const data = sec('progressData', {});
+      if (!data.progress) data.progress = {};
+      if (!data.memos) data.memos = {};
+      const key = `${classId}_${lid}`;
+      const st = btn.dataset.st;
+
+      if (st === 'undone'){ delete data.progress[key]; delete data.memos[key]; }
+      else data.progress[key] = st;
+
+      touch('progressData', data);
+      group.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+      const memo = body.querySelector(`[data-memo="${lid}"]`);
+      if (memo){
+        memo.classList.toggle('hide', st !== 'going');
+        if (st !== 'going') memo.value = '';
+        else memo.focus();
+      }
+      renderGrid();
+    }));
+  });
+
+  // 진행중 메모 — 데스크톱과 같은 자리에 저장한다
+  body.querySelectorAll('[data-memo]').forEach(input => {
+    input.addEventListener('input', () => {
+      clearTimeout(input._t);
+      input._t = setTimeout(() => {
+        const data = sec('progressData', {});
+        if (!data.memos) data.memos = {};
+        const key = `${classId}_${input.dataset.memo}`;
+        const text = input.value.trim();
+        if (text) data.memos[key] = text; else delete data.memos[key];
+        touch('progressData', data);
+      }, 700);
+    });
+  });
 }
 
 // 통계 → 반별 막대
@@ -1481,41 +1588,52 @@ function dayItems(iso){
   const neis = (sec('neisEvents', {}) || {})[iso] || [];
   neis.forEach(e => out.push({ kind: e.off ? 'off' : 'neis', name: e.name }));
   ((sec('customEvents', {}) || {})[iso] || []).forEach((name, i) => out.push({ kind: 'mine', name, idx: i }));
+  // 마감일이 있는 할 일 (데스크톱 학사일정의 ✅ 항목과 같다)
+  ((sec('todoSynced', {}) || {})[iso] || []).forEach((name, i) => out.push({ kind: 'todo', name, idx: i }));
   (sec('ddays', []) || []).filter(d => d.date === iso).forEach(d => out.push({ kind: 'dday', name: d.name }));
   return out;
 }
 
-function renderCalendar(){
-  const { y, m } = calState();
+// 달력 칸 만들기 — mini(위젯)는 점으로, 아니면 일정 이름으로 표시
+function calendarCells({ y, m, mini, pick }){
   const first = new Date(y, m, 1);
   const days = new Date(y, m + 1, 0).getDate();
   const lead = first.getDay();
   const t = todayStr();
 
-  $('#cal-label').textContent = `${y}년 ${m + 1}월`;
-
   const cells = ['일','월','화','수','목','금','토']
     .map((d, i) => `<div class="cal-hd ${i === 0 ? 'sun' : ''}">${d}</div>`);
-
   for (let i = 0; i < lead; i++) cells.push('<div class="cal-cell empty"></div>');
 
   for (let d = 1; d <= days; d++){
     const iso = `${y}-${pad(m + 1)}-${pad(d)}`;
     const items = dayItems(iso);
     const off = items.some(x => x.kind === 'off');
-    const dow = new Date(y, m, d).getDay();
     const cls = ['cal-cell'];
     if (iso === t) cls.push('today');
-    if (iso === calPick) cls.push('on');
-    if (dow === 0) cls.push('sun');
+    if (iso === pick) cls.push('on');
+    if (new Date(y, m, d).getDay() === 0) cls.push('sun');
     if (off) cls.push('off');
-    const first2 = items.slice(0, 2).map(x =>
-      `<div class="cal-txt">${esc(x.name)}</div>`).join('');
-    const more = items.length > 2 ? `<div class="cal-txt">+${items.length - 2}</div>` : '';
-    cells.push(`<div class="${cls.join(' ')}" data-iso="${iso}"><span class="d">${d}</span>${first2}${more}</div>`);
-  }
 
-  $('#cal-grid').innerHTML = cells.join('');
+    let inner = `<span class="d">${d}</span>`;
+    if (mini){
+      const dots = items.slice(0, 3).map(x =>
+        `<i class="${x.kind === 'off' ? 'off' : (x.kind === 'neis' ? 'neis' : (x.kind === 'todo' ? 'todo' : ''))}"></i>`).join('');
+      if (dots) inner += `<span class="dots">${dots}</span>`;
+    } else {
+      inner += items.slice(0, 2).map(x => `<div class="cal-txt">${esc(x.name)}</div>`).join('');
+      if (items.length > 2) inner += `<div class="cal-txt">+${items.length - 2}</div>`;
+    }
+    cells.push(`<div class="${cls.join(' ')}" data-iso="${iso}">${inner}</div>`);
+  }
+  return cells.join('');
+}
+
+function renderCalendar(){
+  const { y, m } = calState();
+
+  $('#cal-label').textContent = `${y}년 ${m + 1}월`;
+  $('#cal-grid').innerHTML = calendarCells({ y, m, mini: false, pick: calPick });
   $('#cal-grid').querySelectorAll('[data-iso]').forEach(cell =>
     cell.addEventListener('click', () => { calPick = cell.dataset.iso; renderCalendar(); }));
 
@@ -1532,20 +1650,21 @@ function renderCalDay(){
   const items = dayItems(iso);
   if (!items.length){ list.innerHTML = '<li class="empty">일정이 없습니다</li>'; return; }
 
-  const chip = { neis:'학사', off:'휴업', mine:'내 일정', dday:'D-DAY' };
+  const chip = { neis:'학사', off:'휴업', mine:'내 일정', todo:'할 일', dday:'D-DAY' };
   list.innerHTML = '';
   items.forEach((x) => {
     const li = document.createElement('li');
     li.className = 'item';
     li.innerHTML = `<div class="txt"><span class="chip">${chip[x.kind]}</span>${esc(x.name)}</div>`;
-    if (x.kind === 'mine'){
+    if (x.kind === 'mine' || x.kind === 'todo'){
+      const key = x.kind === 'mine' ? 'customEvents' : 'todoSynced';
       const del = document.createElement('button');
       del.className = 'del'; del.innerHTML = svg('x','sm');
       del.addEventListener('click', () => {
-        const map = sec('customEvents', {});
+        const map = sec(key, {});
         map[iso].splice(x.idx, 1);
         if (!map[iso].length) delete map[iso];
-        touch('customEvents', map);
+        touch(key, map);
         renderCalendar(); renderGrid();
       });
       li.appendChild(del);
@@ -1740,10 +1859,26 @@ function render(){
 // ── 입력 ──
 function addTodo(){
   const input = $('#todo-input');
-  const text = input.value.trim(); if (!text) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const due = $('#todo-due').value || null;
+
   const todos = sec('todos', []);
-  todos.push({ text, done:false, priority:2, deadline:null });
-  input.value = ''; touch('todos', todos); render();
+  todos.push({ text, done:false, priority:2, deadline:due });
+  touch('todos', todos);
+
+  // 마감일이 있으면 학사일정에도 올린다 (데스크톱과 같은 방식)
+  if (due){
+    const synced = sec('todoSynced', {});
+    if (!synced[due]) synced[due] = [];
+    if (!synced[due].includes(text)) synced[due].push(text);
+    touch('todoSynced', synced);
+  }
+
+  input.value = '';
+  $('#todo-due').value = '';
+  render();
+  toast(due ? `${dayLabel(due)} 마감으로 추가했습니다` : '할 일을 추가했습니다');
 }
 function addEvent(){
   const date = calPick || todayStr();
@@ -1758,6 +1893,7 @@ function addEvent(){
   toast(`${dayLabel(date)}에 추가했습니다`);
 }
 $('#todo-add').addEventListener('click', addTodo);
+$('#todo-due-clear').addEventListener('click', () => { $('#todo-due').value = ''; });
 $('#todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
 $('#ev-add').addEventListener('click', addEvent);
 $('#ev-name').addEventListener('keydown', e => { if (e.key === 'Enter') addEvent(); });
