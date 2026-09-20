@@ -9,6 +9,32 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="쌤보드">
 <title>쌤보드</title>
+<!-- ── 공유·검색용 메타 (휴대폰판) ── -->
+<meta name="description" content="쌤보드 모바일 — PC 쌤보드의 할일·일정·급식·시간표·출결을 휴대폰에서 확인하고 입력합니다. 설치 없이 홈 화면에 추가해 쓰는 무료 웹앱입니다.">
+<meta name="keywords" content="쌤보드 모바일, SsamBoard Mobile, 교사 앱, 할일, 학급 일정, 급식, 출결, 시간표">
+<meta name="author" content="황성재 (@hirame.ki)">
+<link rel="canonical" href="https://hirame-ki.github.io/2/factory/m.html">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="쌤보드 SsamBoard">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:url" content="https://hirame-ki.github.io/2/factory/m.html">
+<meta property="og:title" content="쌤보드 모바일 — 선생님의 하루를 손안에서">
+<meta property="og:description" content="PC 쌤보드의 할일·일정·급식·출결을 휴대폰에서 그대로. 앱 설치 없이 홈 화면에 추가해 쓰는 무료 웹앱입니다.">
+<meta property="og:image" content="https://hirame-ki.github.io/2/factory/og-mobile.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="쌤보드 모바일 화면">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="쌤보드 모바일 — 선생님의 하루를 손안에서">
+<meta name="twitter:description" content="PC 쌤보드의 할일·일정·급식·출결을 휴대폰에서 그대로. 무료.">
+<meta name="twitter:image" content="https://hirame-ki.github.io/2/factory/og-mobile.png">
+
+<!-- 데스크톱판 안내 -->
+<link rel="alternate" media="only screen and (min-width: 641px)" href="https://hirame-ki.github.io/2/factory/">
+
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -403,7 +429,7 @@ const WIDGETS = [
   { id:'event',      icon:'calendar', title:'다가오는 일정', size:2, h:1 },
   { id:'meal',       icon:'meal',     title:'오늘 급식',     size:2, h:1 },
   { id:'dday',       icon:'dday',     title:'디데이',        size:1, h:1 },
-  { id:'timetable',  icon:'clock',    title:'오늘 시간표',   size:1, h:1 },
+  { id:'timetable',  icon:'clock',    title:'교사 시간표',   size:1, h:1 },
   { id:'classtable', icon:'grid',     title:'학급 시간표',   size:2, h:1 },
   { id:'memo',       icon:'memo',     title:'메모',          size:2, h:2 },
   { id:'stats',      icon:'stats',    title:'학급 통계',     size:1, h:1 },
@@ -631,12 +657,15 @@ function widgetBody(id){
   }
   if (id === 'timetable'){
     // 컴시간알리미를 쓰면 그 주의 실제 시간표(변경 반영)를 먼저 쓴다
-    const week = sec('weekTimetable', null);
-    const tt = (week && week.tt) ? week.tt : (sec('timetable', {}) || {});
-    const changed = (week && week.changed) || null;
+    const data = sec('weekTimetable', null);
+    const wk = pickWeek(data, view.ttWeek);
+    const tt = wk ? wk.tt : (sec('timetable', {}) || {});
+    const changed = wk ? wk.changed : null;
     const key = view.timetable || DAY_KEYS[new Date().getDay()];
-    const picker = dayPicker('timetable', key);
-    if (!view.timetable){
+    const picker = (data && data.weeks ? weekNav('ttWeek', data.weeks, wk && wk.start) : '')
+      + dayPicker('timetable', key);
+    const thisWeek = !view.ttWeek || (data && view.ttWeek === data.current);
+    if (!view.timetable && thisWeek){
       const off = holidayLabel();
       if (off) return picker + `<div class="empty">${off}</div>`;
     }
@@ -674,12 +703,14 @@ function widgetBody(id){
   if (id === 'timer') return timerBody();
   if (id === 'classtable'){
     const key = view.classtable || DAY_KEYS[new Date().getDay()];
-    const picker = dayPicker('classtable', key);
+    const cw = sec('classWeekTable', null);
+    const cwk = pickWeek(cw, view.ctWeek);
+    const picker = (cw && cw.weeks ? weekNav('ctWeek', cw.weeks, cwk && cwk.start) : '')
+      + dayPicker('classtable', key);
 
     // 컴시간을 쓰면 그 주 실제 학급 시간표(변경·담당교사 포함)를 먼저 쓴다
-    const cw = sec('classWeekTable', null);
-    if (cw && cw.tt && cw.tt[key]){
-      const rows = (cw.tt[key] || []).map((c, i) => [i + 1, c]).filter(([, c]) => c && c.s);
+    if (cwk && cwk.tt && cwk.tt[key]){
+      const rows = (cwk.tt[key] || []).map((c, i) => [i + 1, c]).filter(([, c]) => c && c.s);
       if (!rows.length) return picker + '<div class="empty">수업이 없습니다</div>';
       return picker + '<ul>' + rows.map(([n, c]) =>
         `<li class="item"><div class="txt"><span class="chip">${n}</span>${esc(c.s)}` +
@@ -755,7 +786,7 @@ function widgetBody(id){
 }
 
 // 위젯마다 지금 어느 날짜·요일을 보고 있는지
-const view = { meal: 0, timetable: null, classtable: null };
+const view = { meal: 0, timetable: null, classtable: null, ttWeek: null, ctWeek: null };
 const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
 const ATT = [['present','출석'], ['late','지각'], ['absent','결석'], ['early','조퇴']];
@@ -831,6 +862,30 @@ setInterval(() => {
   if (card && !card.classList.contains('hidden')) card.querySelector('.wbody').innerHTML = timerBody();
 }, 20000);
 
+// 주차 이동 줄 — 저장된 주차 사이를 앞뒤로 넘긴다
+function weekNav(widget, weeks, activeStart){
+  if (!weeks || weeks.length < 2) {
+    const one = weeks && weeks[0];
+    return one ? `<div class="nav"><span class="lbl">${esc(one.range || '')}</span></div>` : '';
+  }
+  const i = Math.max(0, weeks.findIndex(w => w.start === activeStart));
+  const cur = weeks[i] || weeks[0];
+  return `<div class="nav" data-week="${widget}">
+      <button data-step="-1" ${i <= 0 ? 'disabled' : ''}>‹</button>
+      <span class="lbl">${esc(cur.range || cur.start)}</span>
+      <button data-step="1" ${i >= weeks.length - 1 ? 'disabled' : ''}>›</button>
+    </div>`;
+}
+
+// 보고 있는 주차의 시간표를 고른다
+function pickWeek(data, chosenStart){
+  if (!data) return null;
+  const weeks = data.weeks || [];
+  if (!weeks.length) return { tt: data.tt, changed: data.changed, start: data.current || '' };
+  const want = chosenStart || data.current || weeks[0].start;
+  return weeks.find(w => w.start === want) || weeks[0];
+}
+
 // 요일 선택 줄 (월~금)
 function dayPicker(widget, active){
   return '<div class="days" data-days="' + widget + '">' +
@@ -846,6 +901,18 @@ function bindWidgetControls(card, id){
     btn.addEventListener('click', () => {
       view[card.querySelector('[data-days]').dataset.days] = btn.dataset.day;
       renderGrid();
+    });
+  });
+  card.querySelectorAll('[data-week] button').forEach(btn => {
+    stopTap(btn);
+    btn.addEventListener('click', () => {
+      const key = card.querySelector('[data-week]').dataset.week;   // ttWeek | ctWeek
+      const data = sec(key === 'ttWeek' ? 'weekTimetable' : 'classWeekTable', null);
+      const weeks = (data && data.weeks) || [];
+      const curStart = view[key] || (data && data.current) || (weeks[0] && weeks[0].start);
+      const i = Math.max(0, weeks.findIndex(w => w.start === curStart));
+      const next = weeks[i + Number(btn.dataset.step)];
+      if (next){ view[key] = next.start; renderGrid(); }
     });
   });
   card.querySelectorAll('[data-nav] button').forEach(btn => {
