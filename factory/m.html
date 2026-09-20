@@ -35,7 +35,8 @@
     position:fixed; inset:0; z-index:100; background:var(--palette-bg);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
   }
-  #splash.out{ animation:splashOut .5s cubic-bezier(.4,0,.2,1) forwards; }
+  #splash.out{ animation:splashOut .5s cubic-bezier(.4,0,.2,1) forwards; pointer-events:none; }
+  #splash.gone{ display:none !important; }
   @keyframes splashOut{ to{ opacity:0; visibility:hidden; transform:scale(1.04); } }
   .mark{ display:grid; grid-template-columns:repeat(2,1fr); gap:7px; width:74px; height:74px; }
   .mark i{
@@ -137,7 +138,8 @@
     display:flex; align-items:center; justify-content:center; flex:none; }
 
   /* ── 편집 모드 ── */
-  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite; touch-action:none; }
+  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite; touch-action:none;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
   body.editing .w:nth-child(even){ animation-delay:-1.2s; }
   @keyframes jiggle{ 0%,100%{ transform:rotate(-.35deg) } 50%{ transform:rotate(.35deg) } }
   body.editing .w.hidden{ display:block; opacity:.42; }
@@ -309,7 +311,7 @@
   <nav id="nav"></nav>
 
   <div class="editbar">
-    <span>길게 눌러 옮기고, 아래 버튼으로 크기를 바꾸세요</span>
+    <span>카드를 끌어 옮기고, 아래 버튼으로 크기를 바꾸세요</span>
     <button class="done" id="edit-done">완료</button>
   </div>
 </div>
@@ -667,9 +669,23 @@ function widgetBody(id){
   }
   if (id === 'timer') return timerBody();
   if (id === 'classtable'){
-    const ct = sec('classTimetable', null);
     const key = view.classtable || DAY_KEYS[new Date().getDay()];
     const picker = dayPicker('classtable', key);
+
+    // 컴시간을 쓰면 그 주 실제 학급 시간표(변경·담당교사 포함)를 먼저 쓴다
+    const cw = sec('classWeekTable', null);
+    if (cw && cw.tt && cw.tt[key]){
+      const rows = (cw.tt[key] || []).map((c, i) => [i + 1, c]).filter(([, c]) => c && c.s);
+      if (!rows.length) return picker + '<div class="empty">수업이 없습니다</div>';
+      return picker + '<ul>' + rows.map(([n, c]) =>
+        `<li class="item"><div class="txt"><span class="chip">${n}</span>${esc(c.s)}` +
+        (c.t ? `<span class="sub">${esc(c.t)}</span>` : '') +
+        (c.ch ? ' <span class="sub" style="display:inline;color:var(--warning)">변경</span>' : '') +
+        '</div></li>').join('') + '</ul>';
+    }
+
+    // 컴시간을 안 쓰면 설정에 직접 입력한 학급 시간표
+    const ct = sec('classTimetable', null);
     const dayIdx = DAY_KEYS.indexOf(key) - 1;          // 0=월 … 4=금
     if (!ct || !ct.cells || dayIdx < 0 || dayIdx > 4) return picker + '<div class="empty">학급 수업이 없습니다</div>';
     const list = ct.cells.map(row => (row || [])[dayIdx] || '').map((v, i) => [i + 1, v]).filter(([, v]) => v);
@@ -1059,25 +1075,28 @@ function enableDrag(card){
   }
   function stopEdge(){ clearInterval(edgeTimer); edgeTimer = null; }
 
+  function startDrag(){
+    if (dragging) return;
+    dragging = true;
+    card.classList.add('dragging');
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+
   card.addEventListener('pointerdown', (e) => {
     if (!editing) return;
     startX = e.clientX; startY = e.clientY;
     // 포인터를 먼저 붙잡아야 손가락이 카드 밖으로 나가도 이동이 이어진다
     try { card.setPointerCapture(e.pointerId); } catch (err) {}
-    holdTimer = setTimeout(() => {
-      dragging = true;
-      card.classList.add('dragging');
-      if (navigator.vibrate) navigator.vibrate(12);
-    }, 200);
+    holdTimer = setTimeout(startDrag, 180);   // 가만히 눌러도 시작
   });
 
   card.addEventListener('pointermove', (e) => {
+    // 편집 모드에서는 조금만 움직여도 바로 끌기로 넘어간다
+    // (예전에는 손떨림을 취소로 처리해서 아예 안 움직였다)
     if (!dragging){
-      if (holdTimer && (Math.abs(e.clientY - startY) > 14 || Math.abs(e.clientX - startX) > 14)){
-        clearTimeout(holdTimer); holdTimer = null;
-        try { card.releasePointerCapture(e.pointerId); } catch (err) {}
-      }
-      return;
+      if (!editing) return;
+      if (Math.abs(e.clientY - startY) > 6 || Math.abs(e.clientX - startX) > 6) startDrag();
+      else return;
     }
     e.preventDefault();
     lastPoint = { x: e.clientX, y: e.clientY };
@@ -1297,7 +1316,10 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('load', () => {
   boot();
   setTimeout(() => {
-    $('#splash').classList.add('out');
+    const splash = $('#splash');
+    splash.classList.add('out');
+    // 애니메이션이 실행되지 않는 환경(절전·동작 줄이기)에서도 반드시 사라지게 한다
+    setTimeout(() => splash.classList.add('gone'), 600);
     const cid = clientId();
     if (cid && store.get('ssam_seen', 0)){ $('#app').classList.remove('hide'); auth(cid, true); }
     else showLogin();
