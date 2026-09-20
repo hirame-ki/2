@@ -266,6 +266,13 @@
   .center p{ color:var(--text-secondary); font-size:14px; }
   .btn{ width:100%; background:var(--accent); color:var(--accent-on); font-weight:800;
     padding:14px; border-radius:13px; font-size:15px; }
+  .reconnect{ position:fixed; left:12px; right:12px; z-index:30;
+    bottom:calc(74px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:10px;
+    background:var(--warning); color:#fff; font-size:12.5px; font-weight:600;
+    padding:11px 14px; border-radius:13px; box-shadow:var(--shadow-lifted); }
+  .reconnect button{ margin-left:auto; background:rgba(255,255,255,0.25); color:#fff;
+    font-size:12px; font-weight:800; padding:7px 13px; border-radius:9px; flex:none; }
+
   .toast{ position:fixed; left:50%; transform:translateX(-50%); z-index:50;
     bottom:calc(80px + env(safe-area-inset-bottom)); background:var(--text-primary); color:var(--palette-bg);
     font-size:13px; font-weight:600; padding:10px 18px; border-radius:22px; opacity:0;
@@ -380,6 +387,11 @@
   </div>
 </div>
 
+<div class="reconnect hide" id="reconnect">
+  <span>구글 연결이 만료되었습니다 — 저장된 내용을 보고 있습니다</span>
+  <button id="btn-reconnect">다시 연결</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -387,7 +399,7 @@
 // 쌤보드 모바일 — 구글 드라이브 앱 전용 폴더로 PC와 주고받는다 (서버 없음)
 // ══════════════════════════════════════════════════════════
 const CLIENT_ID = '520514365216-gee28jenmcenvktaj9vi51npmcumj9u8.apps.googleusercontent.com';
-const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const SCOPE = 'https://www.googleapis.com/auth/drive.appdata openid email';
 const FILE_NAME = 'ssamboard-sync.json';
 const FILES_API = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
@@ -460,6 +472,9 @@ const esc = s => String(s).replace(/[<>&]/g, c => ({ '<':'&lt;', '>':'&gt;', '&'
 const store = { get(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } },
                 set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
 
+function showReconnect(){ document.querySelector('#reconnect')?.classList.remove('hide'); }
+function hideReconnect(){ document.querySelector('#reconnect')?.classList.add('hide'); }
+
 function toast(msg){
   const el = $('#toast'); el.textContent = msg; el.classList.add('show');
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 1900);
@@ -524,28 +539,99 @@ $('#btn-login').addEventListener('click', () => {
   auth(cid, false);
 });
 
-function auth(cid, silent){
-  if (!window.google?.accounts?.oauth2){ $('#login-msg').textContent = '잠시 후 다시 시도해주세요.'; return; }
+// 구글 로그인 스크립트가 준비될 때까지 기다린다 (느린 통신에서 자동 로그인이 실패하던 원인)
+function waitForGoogle(ms = 12000){
+  return new Promise((resolve) => {
+    const started = Date.now();
+    (function check(){
+      if (window.google?.accounts?.oauth2) return resolve(true);
+      if (Date.now() - started > ms) return resolve(false);
+      setTimeout(check, 120);
+    })();
+  });
+}
+
+// 아직 살아 있는 토큰이 있으면 그대로 쓴다 (새로고침·앱 전환 대비)
+function cachedToken(){
+  const t = store.get('ssam_tok', null);
+  if (t && t.token && t.exp > Date.now() + 60000) return t.token;
+  return '';
+}
+function keepToken(tok, expiresIn){
+  store.set('ssam_tok', { token: tok, exp: Date.now() + (Number(expiresIn) || 3600) * 1000 });
+}
+function dropToken(){ store.set('ssam_tok', null); }
+
+// 마지막으로 받아 온 내용을 저장해 두었다가, 다음에 열 때 곧바로 보여 준다
+function cacheDoc(){ try { store.set('ssam_doc', doc); } catch (e) {} }
+function restoreDoc(){
+  const d = store.get('ssam_doc', null);
+  if (d && d.sections){ doc = d; return true; }
+  return false;
+}
+
+async function auth(cid, silent){
+  const ready = await waitForGoogle();
+  if (!ready){
+    $('#login-msg').textContent = '네트워크가 느립니다. 새로고침해주세요.';
+    showLogin();
+    return;
+  }
   tokenClient = tokenClient || google.accounts.oauth2.initTokenClient({
-    client_id: cid, scope: SCOPE,
+    client_id: cid,
+    scope: SCOPE,
     callback: async (res) => {
-      if (res.error){ $('#login-msg').textContent = '로그인 실패: ' + res.error; showLogin(); return; }
+      if (res.error){
+        $('#login-msg').textContent = '로그인 실패: ' + res.error;
+        showLogin();
+        return;
+      }
       token = res.access_token;
+      keepToken(token, res.expires_in);
+      hideReconnect();
       store.set('ssam_seen', 1);
+      rememberAccount();
       $('#login').classList.add('hide');
       $('#app').classList.remove('hide');
       await load();
     },
-    error_callback: () => { $('#login-msg').textContent = silent ? '' : '로그인이 취소되었습니다.'; showLogin(); },
+    error_callback: () => {
+      // 조용한 로그인이 막히면 — 저장된 화면이 있으면 그대로 두고 '다시 연결' 띠만 띄운다
+      if (silent && doc){ showReconnect(); return; }
+      $('#login-msg').textContent = silent ? '' : '로그인이 취소되었습니다.';
+      showLogin();
+    },
   });
-  tokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' });
+
+  const opts = silent ? { prompt: '' } : { prompt: 'consent' };
+  const hint = store.get('ssam_hint', '');
+  if (hint) opts.hint = hint;             // 계정이 여러 개여도 전에 쓰던 계정으로
+  tokenClient.requestAccessToken(opts);
+}
+
+// 다음 방문 때 같은 계정으로 조용히 들어가기 위해 이메일을 기억한다
+async function rememberAccount(){
+  if (store.get('ssam_hint', '')) return;
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    const info = await r.json();
+    if (info.email) store.set('ssam_hint', info.email);
+  } catch (e) {}
 }
 function showLogin(){ $('#login').classList.remove('hide'); $('#app').classList.add('hide'); }
 
 // ── 드라이브 입출력 ──
 async function api(url, opts = {}){
   const res = await fetch(url, { ...opts, headers:{ Authorization:'Bearer ' + token, ...(opts.headers || {}) } });
-  if (res.status === 401){ token = ''; throw new Error('로그인이 만료되었습니다'); }
+  if (res.status === 401){
+    token = '';
+    dropToken();
+    const cid = clientId();
+    if (cid) auth(cid, true);                 // 조용히 다시 받아오기
+    throw new Error('다시 연결하는 중입니다');
+  }
   if (!res.ok) throw new Error('구글 요청 실패 (' + res.status + ')');
   return res;
 }
@@ -558,7 +644,9 @@ async function load(){
     if (!f){ toast('PC 쌤보드에서 먼저 연결해주세요'); return; }
     fileId = f.id;
     doc = await (await api(`${FILES_API}/${fileId}?alt=media`)).json();
+    cacheDoc();
     render();
+    hideReconnect();
   } catch (e){ toast(e.message); }
 }
 
@@ -575,6 +663,7 @@ async function save(){
     }
     doc.source = 'mobile';
     doc.updatedAt = new Date().toISOString();
+    cacheDoc();
     await api(`${UPLOAD_API}/${fileId}?uploadType=media`, {
       method:'PATCH', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(doc),
     });
@@ -1269,6 +1358,7 @@ $('#widget-sheet .dim').addEventListener('click', () => $('#widget-sheet').class
 $('#btn-theme').addEventListener('click', () => $('#theme-sheet').classList.add('show'));
 $('#theme-sheet .dim').addEventListener('click', () => $('#theme-sheet').classList.remove('show'));
 $('#btn-reload').addEventListener('click', () => { load(); toast('새로고침했습니다'); });
+$('#btn-reconnect').addEventListener('click', () => { hideReconnect(); auth(clientId(), false); });
 
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token && doc) load(); });
 
@@ -1361,14 +1451,26 @@ if ('serviceWorker' in navigator) {
 
 window.addEventListener('load', () => {
   boot();
-  setTimeout(() => {
+  setTimeout(async () => {
     const splash = $('#splash');
     splash.classList.add('out');
     // 애니메이션이 실행되지 않는 환경(절전·동작 줄이기)에서도 반드시 사라지게 한다
     setTimeout(() => splash.classList.add('gone'), 600);
+
     const cid = clientId();
-    if (cid && store.get('ssam_seen', 0)){ $('#app').classList.remove('hide'); auth(cid, true); }
-    else showLogin();
+    if (!cid || !store.get('ssam_seen', 0)){ showLogin(); return; }
+
+    // ① 지난번 화면을 먼저 그린다 — 기다림 없이 바로 내용이 보인다
+    $('#login').classList.add('hide');
+    $('#app').classList.remove('hide');
+    if (restoreDoc()) render();
+
+    // ② 살아 있는 토큰이 있으면 그대로 최신 내용을 받아온다
+    const cached = cachedToken();
+    if (cached){ token = cached; await load(); return; }
+
+    // ③ 없으면 조용히 다시 받아온다 (막히면 '다시 연결' 띠만 뜬다)
+    auth(cid, true);
   }, 1500);
 });
 </script>
