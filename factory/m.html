@@ -10,13 +10,16 @@
 <meta name="apple-mobile-web-app-title" content="쌤보드">
 <title>쌤보드</title>
 <link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="./m-theme.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html{ height:100%; }
-  /* body에 height:100%를 주면 위젯이 많아질 때 아래가 잘린다 → min-height */
-  body{ min-height:100%; overscroll-behavior-y:none; }
+  /* m-theme.css는 PC 팔레트 창용이라 body에 overflow:hidden을 건다.
+     휴대폰에서는 화면이 길어지므로 반드시 풀어 줘야 스크롤이 된다. */
+  html{ height:auto; }
+  body{ min-height:100vh; overflow:visible; -webkit-overflow-scrolling:touch; }
   body{
     margin:0; background:var(--palette-bg); color:var(--text-primary);
     font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;
@@ -173,6 +176,17 @@
   @keyframes fade{ from{ opacity:0 } }
   @keyframes up{ from{ transform:translateY(100%) } }
   .sheet h3{ margin:0 0 14px; font-size:15px; font-weight:800; }
+  .wrow{ display:flex; align-items:center; gap:11px; padding:12px 0; border-bottom:1px solid var(--divider); }
+  .wrow:last-child{ border-bottom:none; }
+  .wrow .nm{ flex:1; font-size:14px; font-weight:600; }
+  .wrow .ic{ color:var(--accent); display:flex; }
+  .sw{ width:46px; height:27px; border-radius:20px; background:var(--input-bg-strong); position:relative;
+    flex:none; transition:background .18s; }
+  .sw::after{ content:''; position:absolute; top:3px; left:3px; width:21px; height:21px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.3); transition:transform .18s; }
+  .sw.on{ background:var(--accent); }
+  .sw.on::after{ transform:translateX(19px); }
+
   .themes{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
   .theme{ border:2px solid var(--card-border-subtle); border-radius:14px; padding:9px; text-align:center;
     font-size:11.5px; font-weight:700; color:var(--text-secondary); }
@@ -214,6 +228,7 @@
       <h1 id="hd-title">쌤보드</h1>
       <div class="date" id="hd-date"></div>
     </div>
+    <button class="hbtn" id="btn-add" aria-label="위젯 추가"></button>
     <button class="hbtn" id="btn-theme" aria-label="테마"></button>
     <button class="hbtn" id="btn-edit" aria-label="편집"></button>
     <button class="hbtn" id="btn-reload" aria-label="새로고침"></button>
@@ -261,6 +276,16 @@
   <div class="editbar">
     <span>길게 눌러 옮기고, 아래 버튼으로 크기를 바꾸세요</span>
     <button class="done" id="edit-done">완료</button>
+  </div>
+</div>
+
+<div class="sheet" id="widget-sheet">
+  <div class="dim"></div>
+  <div class="panel">
+    <h3>위젯</h3>
+    <p style="margin:-6px 0 14px;font-size:12.5px;color:var(--text-secondary)">
+      켠 위젯이 첫 화면에 나타납니다. 순서와 크기는 연필 버튼에서 바꿉니다.</p>
+    <ul id="widget-list"></ul>
   </div>
 </div>
 
@@ -373,6 +398,22 @@ function applyTheme(id){
   if (t) $('#meta-theme').setAttribute('content', t.bg);
   $$('.theme').forEach(el => el.classList.toggle('on', el.dataset.theme === id));
 }
+function buildWidgetSheet(){
+  const list = document.querySelector('#widget-list');
+  list.innerHTML = WIDGETS.map(w => `
+    <li class="wrow" data-id="${w.id}">
+      <span class="ic">${svg(w.icon)}</span>
+      <span class="nm">${w.title}</span>
+      <span class="sw ${layout[w.id].visible ? 'on' : ''}"></span>
+    </li>`).join('');
+  list.querySelectorAll('.wrow').forEach(row => row.addEventListener('click', () => {
+    const L = layout[row.dataset.id];
+    L.visible = !L.visible;
+    row.querySelector('.sw').classList.toggle('on', L.visible);
+    saveLayout(); renderGrid();
+  }));
+}
+
 function buildThemes(){
   $('#theme-list').innerHTML = THEMES.map(t => `
     <button class="theme" data-theme="${t.id}">
@@ -540,12 +581,20 @@ function widgetBody(id){
     }).join('') + '</ul>';
   }
   if (id === 'timetable'){
-    const tt = sec('timetable', {}) || {};
+    // 컴시간알리미를 쓰면 그 주의 실제 시간표(변경 반영)를 먼저 쓴다
+    const week = sec('weekTimetable', null);
+    const tt = (week && week.tt) ? week.tt : (sec('timetable', {}) || {});
+    const changed = (week && week.changed) || null;
     const key = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-    const list = (tt[key] || []).filter(Boolean);
+    const off = holidayLabel();
+    if (off) return `<div class="empty">${off}</div>`;
+    const cells = (tt[key] || []);
+    const list = cells.map((v, i) => [i + 1, v, changed && changed[key] && changed[key][i]]).filter(([, v]) => v);
     if (!list.length) return '<div class="empty">오늘 수업이 없습니다</div>';
-    return '<ul>' + list.map((s, i) =>
-      `<li class="item"><div class="txt"><span class="chip">${i + 1}</span>${esc(s)}</div></li>`).join('') + '</ul>';
+    return '<ul>' + list.map(([n, v, ch]) =>
+      `<li class="item"><div class="txt"><span class="chip">${n}</span>${esc(v)}` +
+      (ch ? ' <span class="sub" style="display:inline;color:var(--warning)">변경</span>' : '') +
+      `</div></li>`).join('') + '</ul>';
   }
   if (id === 'memo'){
     const m = sec('memo', '');
@@ -629,7 +678,18 @@ const toMin = (hhmm) => {
   const [h, m] = String(hhmm || '').split(':').map(Number);
   return (h || 0) * 60 + (m || 0);
 };
+// 오늘이 수업 없는 날인지 — 주말이거나 NEIS 휴업일
+function holidayLabel(){
+  const day = new Date().getDay();
+  if (day === 0 || day === 6) return '주말입니다';
+  const list = sec('holidays', []) || [];
+  if (list.includes(todayStr())) return '오늘은 휴업일입니다';
+  return '';
+}
+
 function timerBody(){
+  const off = holidayLabel();
+  if (off) return `<div class="empty">${off}</div>`;
   const list = activePeriods().filter(p => p && p.start && p.end);
   if (!list.length) return '<div class="empty">교시 시간이 설정되지 않았습니다</div>';
   const now = new Date();
@@ -831,6 +891,7 @@ function go(id){
   $$('section[data-tab]').forEach(s => s.classList.toggle('hide', s.dataset.tab !== id));
   $('#hd-title').textContent = TABS.find(t => t.id === id).label === '홈' ? '쌤보드' : TABS.find(t => t.id === id).label;
   $('#btn-edit').classList.toggle('hide', id !== 'home');
+  $('#btn-add').classList.toggle('hide', id !== 'home');
   window.scrollTo(0, 0);
 }
 
@@ -843,6 +904,8 @@ function setEditing(on){
 }
 $('#btn-edit').addEventListener('click', () => setEditing(!editing));
 $('#edit-done').addEventListener('click', () => setEditing(false));
+$('#btn-add').addEventListener('click', () => { buildWidgetSheet(); $('#widget-sheet').classList.add('show'); });
+$('#widget-sheet .dim').addEventListener('click', () => $('#widget-sheet').classList.remove('show'));
 $('#btn-theme').addEventListener('click', () => $('#theme-sheet').classList.add('show'));
 $('#theme-sheet .dim').addEventListener('click', () => $('#theme-sheet').classList.remove('show'));
 $('#btn-reload').addEventListener('click', () => { load(); toast('새로고침했습니다'); });
@@ -865,7 +928,8 @@ const isIOS = () =>
 
 function showInstallBar(){
   if (installed() || store.get('ssam_install_off', 0)) return;
-  if (!installPrompt && !isIOS()) return;      // 설치할 수 없는 환경이면 숨긴다
+  // 크롬이 설치 요청을 주지 않는 경우에도 배너는 띄운다
+  // (조건 미달·아이폰 등 → 버튼을 누르면 방법을 안내한다)
   $('#install-bar').classList.remove('hide');
 }
 
@@ -912,6 +976,7 @@ $('#install-sheet .dim').addEventListener('click', () => $('#install-sheet').cla
 
 // ── 시작 ──
 function boot(){
+  $('#btn-add').innerHTML = svg('plus');
   $('#btn-theme').innerHTML = svg('theme');
   $('#btn-edit').innerHTML = svg('edit');
   $('#btn-reload').innerHTML = svg('reload');
@@ -925,6 +990,13 @@ function boot(){
   applyTheme(store.get('ssam_m_theme', 'apple-light'));
   buildThemes(); buildNav(); loadLayout(); renderGrid();
   setTimeout(showInstallBar, 1200);   // 아이폰 등 설치 요청이 오지 않는 환경 대비
+}
+
+// 서비스 워커 — 홈 화면 추가(설치) 조건이자 오프라인 표시용
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
 }
 
 window.addEventListener('load', () => {
