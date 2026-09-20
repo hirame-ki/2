@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="apple-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#ECEEF3" id="meta-theme">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="쌤보드">
+<title>쌤보드</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="./m-theme.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; overscroll-behavior-y:none; }
+  body{
+    margin:0; background:var(--palette-bg); color:var(--text-primary);
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;
+    font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(66px + env(safe-area-inset-bottom));
+  }
+  body::before{
+    content:''; position:fixed; inset:0; background:var(--palette-tint); pointer-events:none; z-index:0;
+  }
+
+  /* ── 오프닝 ── */
+  #splash{
+    position:fixed; inset:0; z-index:100; background:var(--palette-bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  }
+  #splash.out{ animation:splashOut .5s cubic-bezier(.4,0,.2,1) forwards; }
+  @keyframes splashOut{ to{ opacity:0; visibility:hidden; transform:scale(1.04); } }
+  .mark{ display:grid; grid-template-columns:repeat(2,1fr); gap:7px; width:74px; height:74px; }
+  .mark i{
+    display:block; border-radius:9px; background:var(--accent); opacity:0;
+    animation:markIn .5s cubic-bezier(.34,1.3,.5,1) forwards;
+  }
+  .mark i:nth-child(1){ animation-delay:.05s }
+  .mark i:nth-child(2){ animation-delay:.16s }
+  .mark i:nth-child(3){ animation-delay:.38s }
+  .mark i:nth-child(4){ animation-delay:.27s }
+  @keyframes markIn{
+    from{ opacity:0; transform:scale(.4) translateY(8px); }
+    to{ opacity:1; transform:none; }
+  }
+  .wordmark{
+    font-size:19px; font-weight:800; letter-spacing:-0.03em; color:var(--text-primary);
+    opacity:0; animation:wordIn .5s ease .5s forwards;
+  }
+  .wordmark small{ display:block; font-size:11.5px; font-weight:600; color:var(--text-tertiary);
+    letter-spacing:0.02em; margin-top:3px; }
+  @keyframes wordIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+
+  /* ── 공통 ── */
+  .ico{ width:19px; height:19px; flex:none; stroke:currentColor; fill:none;
+    stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .ico.sm{ width:16px; height:16px; }
+  .ico.lg{ width:22px; height:22px; }
+  button{ font:inherit; color:inherit; border:none; background:none; cursor:pointer; }
+
+  header{
+    position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px;
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+    background:var(--card-bg-solid); border-bottom:1px solid var(--card-border-subtle);
+  }
+  header .title{ flex:1; min-width:0; }
+  header h1{ font-size:16.5px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  header .date{ font-size:11.5px; color:var(--text-tertiary); }
+  .hbtn{ width:36px; height:36px; border-radius:11px; display:flex; align-items:center;
+    justify-content:center; color:var(--text-secondary); background:var(--input-bg); }
+  .hbtn.on{ background:var(--accent); color:var(--accent-on); }
+
+  main{ position:relative; z-index:1; padding:14px 14px 0; max-width:680px; margin:0 auto; }
+
+  /* ── 위젯 카드 ── */
+  #grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+  .w{
+    background:var(--card-bg-solid); border:1px solid var(--card-border-subtle);
+    border-radius:18px; box-shadow:var(--shadow-widget); padding:14px;
+    overflow:hidden; position:relative; transition:box-shadow .2s, transform .2s;
+  }
+  .w[data-size="2"]{ grid-column:span 2; }
+  .w[data-h="2"]{ min-height:250px; }
+  .w[data-h="3"]{ min-height:360px; }
+  .w.hidden{ display:none; }
+  .whead{ display:flex; align-items:center; gap:7px; margin-bottom:10px; color:var(--accent); }
+  .whead span{ font-size:12.5px; font-weight:700; color:var(--text-secondary); letter-spacing:-0.01em; }
+  .wbody{ font-size:14px; }
+
+  .row{ display:flex; align-items:center; gap:8px; }
+  ul{ list-style:none; margin:0; padding:0; }
+  li.item{ display:flex; align-items:flex-start; gap:9px; padding:9px 0;
+    border-bottom:1px solid var(--divider); }
+  li.item:last-child{ border-bottom:none; padding-bottom:0; }
+  .check{ width:21px; height:21px; border-radius:7px; border:1.8px solid var(--border);
+    flex:none; margin-top:1px; display:flex; align-items:center; justify-content:center;
+    color:var(--accent-on); background:transparent; }
+  .check.on{ background:var(--accent); border-color:var(--accent); }
+  .txt{ flex:1; min-width:0; word-break:break-word; font-size:14px; }
+  .txt.done{ color:var(--text-tertiary); text-decoration:line-through; }
+  .sub{ display:block; font-size:11px; color:var(--text-tertiary); margin-top:1px; }
+  .del{ color:var(--text-tertiary); padding:0 2px; display:flex; align-items:center; }
+  .chip{ display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:20px;
+    background:var(--accent-soft); color:var(--accent); font-size:11px; font-weight:800;
+    margin-right:7px; flex:none; }
+  .empty{ color:var(--text-tertiary); font-size:13px; text-align:center; padding:16px 0; }
+
+  input[type=text], input[type=date], textarea{
+    width:100%; padding:11px 12px; border:1px solid var(--input-border); border-radius:11px;
+    background:var(--input-bg); color:var(--text-primary); font:inherit; font-size:14.5px; }
+  textarea{ min-height:190px; resize:none; line-height:1.75; }
+  input:focus, textarea:focus{ outline:none; border-color:var(--accent); }
+  .add{ width:40px; height:40px; border-radius:11px; background:var(--accent); color:var(--accent-on);
+    display:flex; align-items:center; justify-content:center; flex:none; }
+
+  /* ── 편집 모드 ── */
+  body.editing .w{ animation:jiggle 2.4s ease-in-out infinite; }
+  body.editing .w:nth-child(even){ animation-delay:-1.2s; }
+  @keyframes jiggle{ 0%,100%{ transform:rotate(-.35deg) } 50%{ transform:rotate(.35deg) } }
+  body.editing .w.hidden{ display:block; opacity:.42; }
+  body.editing .wbody{ pointer-events:none; }
+  .wtools{ display:none; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--divider); }
+  body.editing .wtools{ display:flex; }
+  .wtool{ flex:1; height:34px; border-radius:9px; background:var(--input-bg); color:var(--text-secondary);
+    display:flex; align-items:center; justify-content:center; gap:4px; font-size:11.5px; font-weight:700;
+    white-space:nowrap; padding:0 4px; }
+  .w[data-size="1"] .wtool b{ display:none; }
+  .wtool.on{ background:var(--accent); color:var(--accent-on); }
+  .w.dragging{ opacity:.9; box-shadow:var(--shadow-lifted); animation:none; transform:scale(1.03); z-index:5; }
+  .editbar{ position:fixed; left:0; right:0; bottom:0; z-index:30; display:none;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:var(--edit-bar-bg); color:#fff; align-items:center; gap:12px; font-size:13px; font-weight:700; }
+  body.editing .editbar{ display:flex; }
+  body.editing nav{ display:none; }
+  .editbar .done{ margin-left:auto; background:rgba(255,255,255,0.22); color:#fff;
+    padding:8px 18px; border-radius:10px; font-weight:800; }
+
+  /* ── 하단 탭 ── */
+  nav{ position:fixed; left:0; right:0; bottom:0; z-index:20; display:flex;
+    background:var(--card-bg-solid); border-top:1px solid var(--card-border-subtle);
+    padding-bottom:env(safe-area-inset-bottom); }
+  nav button{ flex:1; padding:9px 0 9px; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--text-tertiary); font-size:10.5px; font-weight:700; }
+  nav button.on{ color:var(--accent); }
+
+  /* ── 시트 ── */
+  .sheet{ position:fixed; inset:0; z-index:40; display:none; }
+  .sheet.show{ display:block; }
+  .sheet .dim{ position:absolute; inset:0; background:rgba(0,0,0,0.42); animation:fade .2s ease; }
+  .sheet .panel{ position:absolute; left:0; right:0; bottom:0; background:var(--card-bg-solid);
+    border-radius:22px 22px 0 0; padding:20px 18px calc(24px + env(safe-area-inset-bottom));
+    animation:up .28s cubic-bezier(.3,1,.4,1); max-height:82vh; overflow-y:auto; }
+  @keyframes fade{ from{ opacity:0 } }
+  @keyframes up{ from{ transform:translateY(100%) } }
+  .sheet h3{ margin:0 0 14px; font-size:15px; font-weight:800; }
+  .themes{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .theme{ border:2px solid var(--card-border-subtle); border-radius:14px; padding:9px; text-align:center;
+    font-size:11.5px; font-weight:700; color:var(--text-secondary); }
+  .theme.on{ border-color:var(--accent); color:var(--accent); }
+  .swatch{ height:34px; border-radius:9px; margin-bottom:7px; display:flex; align-items:flex-end;
+    padding:5px; gap:4px; }
+  .swatch i{ display:block; width:9px; height:9px; border-radius:3px; }
+
+  .center{ position:relative; z-index:1; max-width:400px; margin:14vh auto 0; text-align:center; padding:0 28px; }
+  .center p{ color:var(--text-secondary); font-size:14px; }
+  .btn{ width:100%; background:var(--accent); color:var(--accent-on); font-weight:800;
+    padding:14px; border-radius:13px; font-size:15px; }
+  .toast{ position:fixed; left:50%; transform:translateX(-50%); z-index:50;
+    bottom:calc(80px + env(safe-area-inset-bottom)); background:var(--text-primary); color:var(--palette-bg);
+    font-size:13px; font-weight:600; padding:10px 18px; border-radius:22px; opacity:0;
+    transition:opacity .2s; pointer-events:none; }
+  .toast.show{ opacity:.95; }
+  .hide{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="mark"><i></i><i></i><i></i><i></i></div>
+  <div class="wordmark">쌤보드<small>SSAMBOARD MOBILE</small></div>
+</div>
+
+<div id="login" class="center hide">
+  <div class="mark" style="margin:0 auto 18px"><i style="animation:none;opacity:1"></i><i style="animation:none;opacity:1"></i><i style="animation:none;opacity:1"></i><i style="animation:none;opacity:1"></i></div>
+  <h2 style="margin:0 0 6px;font-size:20px;letter-spacing:-0.02em;">쌤보드 모바일</h2>
+  <p>PC 쌤보드와 같은 구글 계정으로 로그인하면<br>할일·메모·일정을 휴대폰에서 볼 수 있습니다.</p>
+  <button class="btn" id="btn-login" style="margin-top:22px;">구글 계정으로 시작하기</button>
+  <p id="login-msg" style="font-size:12.5px;color:var(--danger);min-height:18px;"></p>
+</div>
+
+<div id="app" class="hide">
+  <header>
+    <div class="title">
+      <h1 id="hd-title">쌤보드</h1>
+      <div class="date" id="hd-date"></div>
+    </div>
+    <button class="hbtn" id="btn-theme" aria-label="테마"></button>
+    <button class="hbtn" id="btn-edit" aria-label="편집"></button>
+    <button class="hbtn" id="btn-reload" aria-label="새로고침"></button>
+  </header>
+
+  <main>
+    <div id="grid"></div>
+
+    <section data-tab="todo" class="hide" style="margin-top:2px">
+      <div class="w" data-size="2" style="animation:none">
+        <div class="row">
+          <input type="text" id="todo-input" placeholder="할일을 입력하세요" enterkeyhint="done">
+          <button class="add" id="todo-add" aria-label="추가"></button>
+        </div>
+      </div>
+      <div class="w" data-size="2" style="margin-top:12px;animation:none"><ul id="todo-list"></ul></div>
+    </section>
+
+    <section data-tab="event" class="hide" style="margin-top:2px">
+      <div class="w" data-size="2" style="animation:none">
+        <input type="date" id="ev-date" style="margin-bottom:9px">
+        <div class="row">
+          <input type="text" id="ev-name" placeholder="일정 이름" enterkeyhint="done">
+          <button class="add" id="ev-add" aria-label="추가"></button>
+        </div>
+      </div>
+      <div class="w" data-size="2" style="margin-top:12px;animation:none"><ul id="event-list"></ul></div>
+    </section>
+
+    <section data-tab="memo" class="hide" style="margin-top:2px">
+      <div class="w" data-size="2" style="animation:none">
+        <textarea id="memo" placeholder="메모를 입력하세요"></textarea>
+      </div>
+    </section>
+  </main>
+
+  <nav id="nav"></nav>
+
+  <div class="editbar">
+    <span>길게 눌러 옮기고, 아래 버튼으로 크기를 바꾸세요</span>
+    <button class="done" id="edit-done">완료</button>
+  </div>
+</div>
+
+<div class="sheet" id="theme-sheet">
+  <div class="dim"></div>
+  <div class="panel">
+    <h3>디자인</h3>
+    <div class="themes" id="theme-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// 쌤보드 모바일 — 구글 드라이브 앱 전용 폴더로 PC와 주고받는다 (서버 없음)
+// ══════════════════════════════════════════════════════════
+const CLIENT_ID = '520514365216-gee28jenmcenvktaj9vi51npmcumj9u8.apps.googleusercontent.com';
+const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const FILE_NAME = 'ssamboard-sync.json';
+const FILES_API = 'https://www.googleapis.com/drive/v3/files';
+const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files';
+
+// ── 라인 아이콘 (PC 위젯 아이콘과 같은 세트) ──
+const I = {
+  todo:     '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  memo:     '<path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  dday:     '<path d="M5 22V3"/><path d="M5 4h13l-2 4 2 4H5"/>',
+  calendar: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11"/>',
+  home:     '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/>',
+  clock:    '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  progress: '<path d="M4 19V5"/><path d="M8 19v-6M12 19v-10M16 19v-4M20 19V8"/>',
+  edit:     '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  theme:    '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.9 0-.5-.2-1-.6-1.4-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h1.4A4.7 4.7 0 0 0 21 9.7C21 5.9 16.9 3 12 3z"/><circle cx="7.6" cy="12.3" r=".9"/><circle cx="9.9" cy="8.2" r=".9"/><circle cx="14.6" cy="8" r=".9"/>',
+  reload:   '<path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 4v5h-5"/>',
+  plus:     '<path d="M12 5v14M5 12h14"/>',
+  x:        '<path d="M6 6l12 12M18 6 6 18"/>',
+  check:    '<path d="M4 12.5 9.5 18 20 6.5"/>',
+  wide:     '<path d="M4 7h16v10H4z"/><path d="M9 7v10"/>',
+  tall:     '<path d="M6 4h12v16H6z"/><path d="M6 10h12"/>',
+  eye:      '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/>',
+  eyeoff:   '<path d="M4 4l16 16"/><path d="M9.9 5.7A9.9 9.9 0 0 1 12 5.5c6.4 0 10 6.5 10 6.5a16 16 0 0 1-3.6 4.3"/><path d="M6.4 7.7A16 16 0 0 0 2 12s3.6 6.5 10 6.5a9.6 9.6 0 0 0 3.4-.6"/>',
+};
+const svg = (name, cls) =>
+  `<svg class="ico ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${I[name] || ''}</svg>`;
+
+// ── 위젯 정의 ──
+const WIDGETS = [
+  { id:'todo',      icon:'todo',     title:'할일',     size:2, h:1 },
+  { id:'event',     icon:'calendar', title:'다가오는 일정', size:2, h:1 },
+  { id:'dday',      icon:'dday',     title:'디데이',   size:1, h:1 },
+  { id:'timetable', icon:'clock',    title:'오늘 시간표', size:1, h:1 },
+  { id:'memo',      icon:'memo',     title:'메모',     size:2, h:2 },
+  { id:'progress',  icon:'progress', title:'진도',     size:2, h:1 },
+];
+const THEMES = [
+  { id:'apple-light', name:'애플 라이트', bg:'#ECEEF3', ac:'#0071E3' },
+  { id:'apple-dark',  name:'애플 다크',   bg:'#1C1C1E', ac:'#0A84FF' },
+  { id:'slate',       name:'슬레이트',    bg:'#20242B', ac:'#7C93B0' },
+  { id:'ocean',       name:'오션',        bg:'#0E1B2A', ac:'#4A9CFF' },
+  { id:'forest',      name:'포레스트',    bg:'#0F1F16', ac:'#4ADE80' },
+  { id:'crimson',     name:'크림슨',      bg:'#241016', ac:'#FF5566' },
+  { id:'lavender',    name:'라벤더',      bg:'#1C1830', ac:'#A78BFA' },
+  { id:'rose',        name:'로즈',        bg:'#F6EDEF', ac:'#E05C7B' },
+  { id:'amber',       name:'앰버',        bg:'#231A0E', ac:'#F59E0B' },
+];
+
+let token = '', tokenClient = null, fileId = '', doc = null;
+let saveTimer = null, editing = false, tab = 'home';
+let layout = {};
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const pad = n => String(n).padStart(2, '0');
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const esc = s => String(s).replace(/[<>&]/g, c => ({ '<':'&lt;', '>':'&gt;', '&':'&amp;' }[c]));
+const store = { get(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } },
+                set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
+
+function toast(msg){
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 1900);
+}
+
+// ── 테마 ──
+function applyTheme(id){
+  document.documentElement.dataset.theme = id;
+  store.set('ssam_m_theme', id);
+  const t = THEMES.find(x => x.id === id);
+  if (t) $('#meta-theme').setAttribute('content', t.bg);
+  $$('.theme').forEach(el => el.classList.toggle('on', el.dataset.theme === id));
+}
+function buildThemes(){
+  $('#theme-list').innerHTML = THEMES.map(t => `
+    <button class="theme" data-theme="${t.id}">
+      <div class="swatch" style="background:${t.bg}">
+        <i style="background:${t.ac}"></i><i style="background:${t.ac};opacity:.5"></i>
+      </div>${t.name}
+    </button>`).join('');
+  $$('.theme').forEach(el => el.addEventListener('click', () => {
+    applyTheme(el.dataset.theme);
+    $('#theme-sheet').classList.remove('show');
+  }));
+}
+
+// ── 레이아웃 (기기별로 저장) ──
+function loadLayout(){
+  const saved = store.get('ssam_m_layout', null);
+  layout = {};
+  WIDGETS.forEach(w => { layout[w.id] = { size:w.size, h:w.h, visible:true, order:WIDGETS.indexOf(w) }; });
+  if (saved) Object.entries(saved).forEach(([k, v]) => { if (layout[k]) Object.assign(layout[k], v); });
+}
+const saveLayout = () => store.set('ssam_m_layout', layout);
+
+// ── 로그인 ──
+const clientId = () => CLIENT_ID || store.get('ssam_cid', '');
+
+$('#btn-login').addEventListener('click', () => {
+  let cid = clientId();
+  if (!cid) {
+    cid = (prompt('웹 클라이언트 ID를 입력하세요 (최초 1회)') || '').trim();
+    if (!cid) return;
+    store.set('ssam_cid', cid);
+  }
+  auth(cid, false);
+});
+
+function auth(cid, silent){
+  if (!window.google?.accounts?.oauth2){ $('#login-msg').textContent = '잠시 후 다시 시도해주세요.'; return; }
+  tokenClient = tokenClient || google.accounts.oauth2.initTokenClient({
+    client_id: cid, scope: SCOPE,
+    callback: async (res) => {
+      if (res.error){ $('#login-msg').textContent = '로그인 실패: ' + res.error; showLogin(); return; }
+      token = res.access_token;
+      store.set('ssam_seen', 1);
+      $('#login').classList.add('hide');
+      $('#app').classList.remove('hide');
+      await load();
+    },
+    error_callback: () => { $('#login-msg').textContent = silent ? '' : '로그인이 취소되었습니다.'; showLogin(); },
+  });
+  tokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' });
+}
+function showLogin(){ $('#login').classList.remove('hide'); $('#app').classList.add('hide'); }
+
+// ── 드라이브 입출력 ──
+async function api(url, opts = {}){
+  const res = await fetch(url, { ...opts, headers:{ Authorization:'Bearer ' + token, ...(opts.headers || {}) } });
+  if (res.status === 401){ token = ''; throw new Error('로그인이 만료되었습니다'); }
+  if (!res.ok) throw new Error('구글 요청 실패 (' + res.status + ')');
+  return res;
+}
+
+async function load(){
+  try {
+    const q = encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
+    const list = await (await api(`${FILES_API}?spaces=appDataFolder&q=${q}&fields=files(id)`)).json();
+    const f = list.files?.[0];
+    if (!f){ toast('PC 쌤보드에서 먼저 연결해주세요'); return; }
+    fileId = f.id;
+    doc = await (await api(`${FILES_API}/${fileId}?alt=media`)).json();
+    render();
+  } catch (e){ toast(e.message); }
+}
+
+async function save(){
+  if (!doc || !fileId) return;
+  try {
+    let remote = null;
+    try { remote = await (await api(`${FILES_API}/${fileId}?alt=media`)).json(); } catch (e){}
+    if (remote?.sections){
+      for (const [k, s] of Object.entries(remote.sections)){
+        const mine = doc.sections[k];
+        if (!mine || s.updatedAt > mine.updatedAt) doc.sections[k] = s;
+      }
+    }
+    doc.source = 'mobile';
+    doc.updatedAt = new Date().toISOString();
+    await api(`${UPLOAD_API}/${fileId}?uploadType=media`, {
+      method:'PATCH', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(doc),
+    });
+    render();
+  } catch (e){ toast(e.message); }
+}
+
+function touch(key, data){
+  if (!doc.sections[key]) doc.sections[key] = { mode:'two-way', updatedAt:'', data:null };
+  doc.sections[key].data = data;
+  doc.sections[key].updatedAt = new Date().toISOString();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 700);
+}
+const sec = (k, d) => {
+  const v = doc?.sections?.[k]?.data;
+  return (v === null || v === undefined) ? d : v;
+};
+
+// ── 위젯 내용 ──
+function todoItem(t, i, onToggle, onDelete){
+  const li = document.createElement('li');
+  li.className = 'item';
+  const b = document.createElement('button');
+  b.className = 'check' + (t.done ? ' on' : '');
+  b.innerHTML = t.done ? svg('check','sm') : '';
+  b.addEventListener('click', () => onToggle(i));
+  const tx = document.createElement('div');
+  tx.className = 'txt' + (t.done ? ' done' : '');
+  tx.textContent = t.text;
+  if (t.deadline){
+    const s = document.createElement('span');
+    s.className = 'sub'; s.textContent = '마감 ' + t.deadline;
+    tx.appendChild(s);
+  }
+  li.append(b, tx);
+  if (onDelete){
+    const d = document.createElement('button');
+    d.className = 'del'; d.innerHTML = svg('x','sm');
+    d.addEventListener('click', () => onDelete(i));
+    li.appendChild(d);
+  }
+  return li;
+}
+
+function flatEvents(){
+  const map = sec('customEvents', {}) || {};
+  const out = [];
+  Object.entries(map).forEach(([date, names]) => (names || []).forEach((name, i) => out.push({ date, name, i })));
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function widgetBody(id){
+  const t = todayStr();
+  if (id === 'todo'){
+    const todos = sec('todos', []);
+    const undone = todos.map((x, i) => [x, i]).filter(([x]) => !x.done).slice(0, 5);
+    if (!undone.length) return '<div class="empty">남은 할일이 없습니다</div>';
+    const ul = document.createElement('ul');
+    undone.forEach(([x, i]) => ul.appendChild(todoItem(x, i, toggleTodo, null)));
+    return ul;
+  }
+  if (id === 'event'){
+    const near = flatEvents().filter(e => e.date >= t).slice(0, 5);
+    if (!near.length) return '<div class="empty">다가오는 일정이 없습니다</div>';
+    return '<ul>' + near.map(e => {
+      const d = Math.round((new Date(e.date) - new Date(t)) / 86400000);
+      const label = d === 0 ? '오늘' : d === 1 ? '내일' : 'D-' + d;
+      return `<li class="item"><div class="txt"><span class="chip">${label}</span>${esc(e.name)}</div></li>`;
+    }).join('') + '</ul>';
+  }
+  if (id === 'dday'){
+    const dd = sec('ddays', []);
+    if (!dd.length) return '<div class="empty">디데이가 없습니다</div>';
+    return '<ul>' + dd.slice(0, 5).map(d => {
+      const diff = Math.round((new Date(d.date) - new Date(t)) / 86400000);
+      const label = diff === 0 ? 'D-DAY' : diff > 0 ? 'D-' + diff : 'D+' + (-diff);
+      return `<li class="item"><div class="txt"><span class="chip">${label}</span>${esc(d.name)}</div></li>`;
+    }).join('') + '</ul>';
+  }
+  if (id === 'timetable'){
+    const tt = sec('timetable', {}) || {};
+    const key = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+    const list = (tt[key] || []).filter(Boolean);
+    if (!list.length) return '<div class="empty">오늘 수업이 없습니다</div>';
+    return '<ul>' + list.map((s, i) =>
+      `<li class="item"><div class="txt"><span class="chip">${i + 1}</span>${esc(s)}</div></li>`).join('') + '</ul>';
+  }
+  if (id === 'memo'){
+    const m = sec('memo', '');
+    if (!m) return '<div class="empty">메모가 없습니다</div>';
+    return `<div class="txt" style="white-space:pre-wrap">${esc(m)}</div>`;
+  }
+  if (id === 'progress'){
+    const p = sec('progressData', null);
+    const units = p?.units ? Object.keys(p.units).length : 0;
+    const subjects = p?.subjects?.length || 0;
+    if (!units && !subjects) return '<div class="empty">진도 자료가 없습니다</div>';
+    return `<div class="row" style="gap:20px">
+      <div><div class="sub">과목</div><b style="font-size:19px">${subjects}</b></div>
+      <div><div class="sub">단원</div><b style="font-size:19px">${units}</b></div></div>`;
+  }
+  return '';
+}
+
+function renderGrid(){
+  const grid = $('#grid');
+  grid.innerHTML = '';
+  WIDGETS.slice().sort((a, b) => layout[a.id].order - layout[b.id].order).forEach(w => {
+    const L = layout[w.id];
+    const card = document.createElement('div');
+    card.className = 'w' + (L.visible ? '' : ' hidden');
+    card.dataset.id = w.id;
+    card.dataset.size = L.size;
+    card.dataset.h = L.h;
+
+    const head = document.createElement('div');
+    head.className = 'whead';
+    head.innerHTML = svg(w.icon) + `<span>${w.title}</span>`;
+
+    const body = document.createElement('div');
+    body.className = 'wbody';
+    const content = widgetBody(w.id);
+    if (typeof content === 'string') body.innerHTML = content; else body.appendChild(content);
+
+    const tools = document.createElement('div');
+    tools.className = 'wtools';
+    tools.innerHTML =
+      `<button class="wtool" data-act="size">${svg('wide','sm')}<b>${L.size === 2 ? '한 칸' : '두 칸'}</b></button>` +
+      `<button class="wtool" data-act="h">${svg('tall','sm')}<b>${L.h === 1 ? '길게' : '짧게'}</b></button>` +
+      `<button class="wtool ${L.visible ? '' : 'on'}" data-act="vis">` +
+      `${svg(L.visible ? 'eye' : 'eyeoff','sm')}<b>${L.visible ? '숨기기' : '보이기'}</b></button>`;
+    tools.addEventListener('click', (e) => {
+      const btn = e.target.closest('.wtool'); if (!btn) return;
+      const act = btn.dataset.act;
+      if (act === 'size') L.size = L.size === 2 ? 1 : 2;
+      if (act === 'h') L.h = L.h === 1 ? 2 : 1;
+      if (act === 'vis') L.visible = !L.visible;
+      saveLayout(); renderGrid();
+    });
+
+    card.append(head, body, tools);
+    enableDrag(card);
+    grid.appendChild(card);
+  });
+}
+
+// ── 길게 눌러 옮기기 ──
+function enableDrag(card){
+  let holdTimer = null, dragging = false, startY = 0, startX = 0;
+
+  card.addEventListener('pointerdown', (e) => {
+    if (!editing) return;
+    startX = e.clientX; startY = e.clientY;
+    holdTimer = setTimeout(() => {
+      dragging = true;
+      card.classList.add('dragging');
+      card.setPointerCapture(e.pointerId);
+      if (navigator.vibrate) navigator.vibrate(12);
+    }, 220);
+  });
+
+  card.addEventListener('pointermove', (e) => {
+    if (!dragging){
+      if (holdTimer && (Math.abs(e.clientY - startY) > 9 || Math.abs(e.clientX - startX) > 9)){
+        clearTimeout(holdTimer); holdTimer = null;
+      }
+      return;
+    }
+    e.preventDefault();
+    card.style.pointerEvents = 'none';
+    const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.w');
+    card.style.pointerEvents = '';
+    if (under && under !== card && under.parentElement === card.parentElement){
+      const rect = under.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      under.parentElement.insertBefore(card, after ? under.nextSibling : under);
+    }
+  });
+
+  const end = () => {
+    clearTimeout(holdTimer); holdTimer = null;
+    if (!dragging) return;
+    dragging = false;
+    card.classList.remove('dragging');
+    [...card.parentElement.children].forEach((el, i) => { if (layout[el.dataset.id]) layout[el.dataset.id].order = i; });
+    saveLayout();
+  };
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', end);
+}
+
+// ── 목록 화면 ──
+function toggleTodo(i){ const t = sec('todos', []); t[i].done = !t[i].done; touch('todos', t); render(); }
+function removeTodo(i){ const t = sec('todos', []); t.splice(i, 1); touch('todos', t); render(); }
+
+function renderLists(){
+  const todos = sec('todos', []);
+  const list = $('#todo-list');
+  list.innerHTML = '';
+  if (!todos.length) list.innerHTML = '<li class="empty">할일이 없습니다</li>';
+  todos.forEach((t, i) => list.appendChild(todoItem(t, i, toggleTodo, removeTodo)));
+
+  const ev = $('#event-list');
+  ev.innerHTML = '';
+  const future = flatEvents().filter(e => e.date >= todayStr());
+  if (!future.length) ev.innerHTML = '<li class="empty">등록된 일정이 없습니다</li>';
+  future.forEach(e => {
+    const li = document.createElement('li');
+    li.className = 'item';
+    li.innerHTML = `<div class="txt"><span class="chip">${e.date.slice(5).replace('-','/')}</span>${esc(e.name)}</div>`;
+    const d = document.createElement('button');
+    d.className = 'del'; d.innerHTML = svg('x','sm');
+    d.addEventListener('click', () => {
+      const map = sec('customEvents', {});
+      map[e.date].splice(e.i, 1);
+      if (!map[e.date].length) delete map[e.date];
+      touch('customEvents', map); render();
+    });
+    li.appendChild(d); ev.appendChild(li);
+  });
+
+  const memo = $('#memo');
+  if (document.activeElement !== memo) memo.value = sec('memo', '');
+}
+
+function render(){ renderGrid(); renderLists(); }
+
+// ── 입력 ──
+function addTodo(){
+  const input = $('#todo-input');
+  const text = input.value.trim(); if (!text) return;
+  const todos = sec('todos', []);
+  todos.push({ text, done:false, priority:2, deadline:null });
+  input.value = ''; touch('todos', todos); render();
+}
+function addEvent(){
+  const date = $('#ev-date').value, name = $('#ev-name').value.trim();
+  if (!date) return toast('날짜를 선택해주세요');
+  if (!name) return toast('일정 이름을 입력해주세요');
+  const map = sec('customEvents', {});
+  (map[date] = map[date] || []).push(name);
+  $('#ev-name').value = ''; touch('customEvents', map); render();
+  toast('일정이 추가되었습니다');
+}
+$('#todo-add').addEventListener('click', addTodo);
+$('#todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+$('#ev-add').addEventListener('click', addEvent);
+$('#ev-name').addEventListener('keydown', e => { if (e.key === 'Enter') addEvent(); });
+$('#memo').addEventListener('input', () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => touch('memo', $('#memo').value), 900);
+});
+
+// ── 탭 ──
+const TABS = [
+  { id:'home',  icon:'home',     label:'홈' },
+  { id:'todo',  icon:'todo',     label:'할일' },
+  { id:'event', icon:'calendar', label:'일정' },
+  { id:'memo',  icon:'memo',     label:'메모' },
+];
+function buildNav(){
+  $('#nav').innerHTML = TABS.map(t =>
+    `<button data-go="${t.id}" class="${t.id === 'home' ? 'on' : ''}">${svg(t.icon,'lg')}${t.label}</button>`).join('');
+  $$('#nav button').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+}
+function go(id){
+  tab = id;
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.go === id));
+  $('#grid').classList.toggle('hide', id !== 'home');
+  $$('section[data-tab]').forEach(s => s.classList.toggle('hide', s.dataset.tab !== id));
+  $('#hd-title').textContent = TABS.find(t => t.id === id).label === '홈' ? '쌤보드' : TABS.find(t => t.id === id).label;
+  $('#btn-edit').classList.toggle('hide', id !== 'home');
+  window.scrollTo(0, 0);
+}
+
+// ── 편집 모드 ──
+function setEditing(on){
+  editing = on;
+  document.body.classList.toggle('editing', on);
+  $('#btn-edit').classList.toggle('on', on);
+  if (!on) renderGrid();
+}
+$('#btn-edit').addEventListener('click', () => setEditing(!editing));
+$('#edit-done').addEventListener('click', () => setEditing(false));
+$('#btn-theme').addEventListener('click', () => $('#theme-sheet').classList.add('show'));
+$('#theme-sheet .dim').addEventListener('click', () => $('#theme-sheet').classList.remove('show'));
+$('#btn-reload').addEventListener('click', () => { load(); toast('새로고침했습니다'); });
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden && token && doc) load(); });
+
+// ── 시작 ──
+function boot(){
+  $('#btn-theme').innerHTML = svg('theme');
+  $('#btn-edit').innerHTML = svg('edit');
+  $('#btn-reload').innerHTML = svg('reload');
+  $('#todo-add').innerHTML = svg('plus');
+  $('#ev-add').innerHTML = svg('plus');
+  const d = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  $('#hd-date').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+  applyTheme(store.get('ssam_m_theme', 'apple-light'));
+  buildThemes(); buildNav(); loadLayout(); renderGrid();
+}
+
+window.addEventListener('load', () => {
+  boot();
+  setTimeout(() => {
+    $('#splash').classList.add('out');
+    const cid = clientId();
+    if (cid && store.get('ssam_seen', 0)){ $('#app').classList.remove('hide'); auth(cid, true); }
+    else showLogin();
+  }, 1500);
+});
+</script>
+</body>
+</html>
