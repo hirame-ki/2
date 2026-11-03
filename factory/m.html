@@ -273,7 +273,19 @@
   .bar .vl{ width:24px; text-align:right; font-weight:800; flex:none; }
 
   /* 출결·진도 조작 */
-  .stu{ display:flex; align-items:center; gap:9px; padding:9px 0; border-bottom:1px solid var(--divider); }
+  .stu{ display:flex; align-items:center; flex-wrap:wrap; gap:9px; padding:9px 0; border-bottom:1px solid var(--divider); }
+  /* 출결 교시 — 결석·지각·조퇴·결과를 누르면 아래에 열린다 */
+  .stu .pers{ flex-basis:100%; display:flex; flex-wrap:wrap; gap:4px; padding:2px 0 2px 35px; }
+  .stu .pers.hide{ display:none; }
+  .stu .pers .hint{ flex-basis:100%; font-size:11px; color:var(--text-tertiary); margin-bottom:2px; }
+  .stu .pers button{ padding:5px 8px; border-radius:7px; font-size:11px; font-weight:700;
+    background:var(--input-bg); color:var(--text-secondary); }
+  .stu .pers button.on{ background:var(--accent); color:var(--accent-on); }
+  .stu .pers[data-st="absent"] button.on{ background:#FF3B30; color:#fff; }
+  .stu .pers[data-st="late"] button.on{ background:#FF9500; color:#fff; }
+  .stu .pers[data-st="early"] button.on{ background:#0A84FF; color:#fff; }
+  .stu .pers[data-st="result"] button.on{ background:#AF52DE; color:#fff; }
+  .stu .pers[data-st="absent"] button{ pointer-events:none; }
   .stu:last-child{ border-bottom:none; }
   .stu .no{ width:26px; font-size:12px; color:var(--text-tertiary); font-weight:700; flex:none; }
   .stu .nm{ flex:1; font-size:14px; }
@@ -1121,6 +1133,100 @@ const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
 // 데스크톱 명렬표와 같은 값 — 아무것도 고르지 않으면 출석(present)
 const ATT = [['absent','결석'], ['late','지각'], ['early','조퇴'], ['result','결과']];
+/* 출결 교시 — PC와 같은 규칙
+   결석: 조회~종례 전부 / 지각: 조회~고른 교시 / 조퇴: 고른 교시~종례 / 결과: 고른 교시만(여러 개)
+   attendancePeriods[날짜][반][번호] = ['조회','1교시',...] (출결 칸과 따로 둔다) */
+const PERIOD_ST = ['absent', 'late', 'early', 'result'];
+const PERIOD_HINT = {
+  absent: '결석 — 조회부터 종례까지 모두 결석으로 기록돼요',
+  late: '몇 교시까지 지각했나요? (조회부터 고른 교시까지)',
+  early: '몇 교시부터 조퇴했나요? (고른 교시부터 종례까지)',
+  result: '결과 교시를 골라 주세요 (고른 교시만, 여러 개 가능)',
+};
+function periodChoices(day){
+  const bt = sec('blockTime', null);
+  const dk = ['sun','mon','tue','wed','thu','fri','sat'][new Date(day + 'T00:00:00').getDay()];
+  const isBlock = bt && bt.enabled && Array.isArray(bt.periods) && bt.periods.length &&
+    (Array.isArray(bt.days) ? bt.days.includes(dk) : !!(bt.days && bt.days[dk]));
+  const list = (isBlock ? bt.periods : (sec('periods', []) || [])).map(p => p.name)
+    .filter(n => n && n !== '점심' && n !== '조회' && n !== '종례');
+  return ['조회', ...list, '종례'];
+}
+function expandPeriods(st, picked, choices){
+  const i = choices.indexOf(picked);
+  if (st === 'absent') return [...choices];
+  if (i < 0) return [];
+  if (st === 'late') return choices.slice(0, i + 1);
+  if (st === 'early') return choices.slice(i);
+  return [picked];
+}
+function getPeriods(day, ci, si){
+  return (((sec('attendancePeriods', {}) || {})[day] || {})[ci] || {})[si] || [];
+}
+function setPeriods(day, ci, si, list){
+  const all = sec('attendancePeriods', {}) || {};
+  if (list && list.length){
+    if (!all[day]) all[day] = {};
+    if (!all[day][ci]) all[day][ci] = {};
+    all[day][ci][si] = list;
+  } else if (all[day] && all[day][ci]){
+    delete all[day][ci][si];
+    if (!Object.keys(all[day][ci]).length) delete all[day][ci];
+    if (!Object.keys(all[day]).length) delete all[day];
+  }
+  touch('attendancePeriods', all);
+}
+/* 하루 여러 출결 — 지각하고 조퇴, 지각하고 결과처럼. PC와 같은 자리에 둔다:
+   첫 출결은 attendance·attendancePeriods, 두 번째부터는 attendanceExtra[날짜][반][번호] = { early: ['5교시', ...] }
+   결석은 하루 전체라 혼자만 둔다 */
+function extraOf(day, ci, si){
+  return (((sec('attendanceExtra', {}) || {})[day] || {})[ci] || {})[si] || {};
+}
+// 집계용 — 첫 출결 v에 같은 날 나머지 출결을 더한다
+function statusesOf(day, ci, si, v){
+  if (!PERIOD_ST.includes(v)) return [];
+  if (v === 'absent') return [v];
+  return [v, ...Object.keys(extraOf(day, ci, si)).filter(k => k !== v && k !== 'absent' && PERIOD_ST.includes(k))];
+}
+// [{status, periods}] — 출석이면 빈 목록
+function getEntries(day, ci, si){
+  const main = (((sec('attendance', {}) || {})[day] || {})[ci] || {})[si];
+  const ex = extraOf(day, ci, si);
+  return statusesOf(day, ci, si, main)
+    .sort((a, b) => PERIOD_ST.indexOf(a) - PERIOD_ST.indexOf(b))
+    .map(st => {
+      if (st !== main) return { status: st, periods: ex[st] || [] };
+      const per = getPeriods(day, ci, si);
+      return { status: st, periods: st === 'absent' && !per.length ? periodChoices(day) : per };
+    });
+}
+function setEntries(day, ci, si, list){
+  let ents = list.filter(e => PERIOD_ST.includes(e.status))
+    .sort((a, b) => PERIOD_ST.indexOf(a.status) - PERIOD_ST.indexOf(b.status));
+  if (ents.some(e => e.status === 'absent')) ents = ents.filter(e => e.status === 'absent');
+  const [main, ...rest] = ents;
+  const all = sec('attendance', {});
+  if (!all[day]) all[day] = {};
+  if (!all[day][ci]) all[day][ci] = { memos: {} };
+  const slot = all[day][ci];
+  if (main) slot[si] = main.status; else delete slot[si];
+  if (!slot.memos) slot.memos = {};
+  touch('attendance', all);
+  setPeriods(day, ci, si, main ? main.periods : []);
+  // 두 번째부터 — 없던 칸을 지우는 일이면 건드리지 않는다
+  const ex = sec('attendanceExtra', {}) || {};
+  const had = !!((ex[day] || {})[ci] || {})[si];
+  if (rest.length){
+    if (!ex[day]) ex[day] = {};
+    if (!ex[day][ci]) ex[day][ci] = {};
+    ex[day][ci][si] = Object.fromEntries(rest.map(e => [e.status, e.periods]));
+  } else if (had){
+    delete ex[day][ci][si];
+    if (!Object.keys(ex[day][ci]).length) delete ex[day][ci];
+    if (!Object.keys(ex[day]).length) delete ex[day];
+  }
+  if (rest.length || had) touch('attendanceExtra', ex);
+}
 const ATT_COLOR = { absent:'#FF3B30', late:'#FF9500', early:'#0A84FF', result:'#AF52DE' };
 const ATT_NAME  = { absent:'결석', late:'지각', early:'조퇴', result:'결과' };
 
@@ -1394,42 +1500,62 @@ function renderRosterDetail(classIdx){
   const cls = roster[classIdx];
   const day = (typeof rosterDate === 'function') ? rosterDate() : t;
   $('#detail-title').textContent = `${cls.name} · ${dayLabel(day)}${day === t ? ' (오늘)' : ''}`;
-  const att = sec('attendance', {});
-  const mine = (att[day] || {})[classIdx] || {};
+  const choices = periodChoices(day);
+
+  // 한 학생 줄 — 출결 버튼(지각·조퇴·결과는 함께 켤 수 있다) + 켠 출결마다 교시 줄
+  const stuHtml = (si) => {
+    const ents = getEntries(day, classIdx, si);
+    const on = Object.fromEntries(ents.map(e => [e.status, e.periods]));
+    return `<span class="no">${si + 1}</span><span class="nm">${esc(cls.students[si])}</span>
+      <span class="att">` +
+      ATT.map(([k, label]) => `<button data-st="${k}" class="${on[k] ? 'on' : ''}">${label}</button>`).join('') +
+      '</span>' +
+      ents.map(e => `<div class="pers" data-st="${e.status}"><span class="hint">${PERIOD_HINT[e.status]}</span>` +
+        choices.map(p => `<button data-p="${esc(p)}" class="${e.periods.includes(p) ? 'on' : ''}">${esc(p)}</button>`).join('') +
+        '</div>').join('');
+  };
 
   body.innerHTML =
     `<button class="wtool" id="back-cls" style="margin-bottom:10px;height:32px;width:auto;padding:0 12px">← 반 목록</button>` +
-    `<div class="sub" style="margin-bottom:6px">아무것도 누르지 않으면 출석입니다. 다시 누르면 해제됩니다.</div>` +
-    '<ul>' + cls.students.map((nm, si) => {
-      const cur = mine[si] || 'present';
-      return `<li class="stu"><span class="no">${si + 1}</span><span class="nm">${esc(nm)}</span>
-        <span class="att" data-si="${si}">` +
-        ATT.map(([k, label]) =>
-          `<button data-st="${k}" class="${cur === k ? 'on' : ''}">${label}</button>`).join('') +
-        '</span></li>';
-    }).join('') + '</ul>';
+    `<div class="sub" style="margin-bottom:6px">아무것도 누르지 않으면 출석입니다. 다시 누르면 해제됩니다. 지각·조퇴·결과는 함께 고를 수 있어요.</div>` +
+    '<ul>' + cls.students.map((nm, si) => `<li class="stu" data-si="${si}">${stuHtml(si)}</li>`).join('') + '</ul>';
 
   body.querySelector('#back-cls').addEventListener('click', () => {
     $('#detail-title').textContent = '명렬표 · 출결';
     renderRosterDetail();
   });
 
-  body.querySelectorAll('.att').forEach(group => {
-    const si = group.dataset.si;
-    group.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
-      // 이미 켜진 버튼을 다시 누르면 해제 → 출석 (데스크톱과 같다)
-      const status = btn.classList.contains('on') ? 'present' : btn.dataset.st;
-      const all = sec('attendance', {});
-      if (!all[day]) all[day] = {};
-      if (!all[day][classIdx]) all[day][classIdx] = { memos: {} };
-      const slot = all[day][classIdx];
-      if (status === 'present') delete slot[si]; else slot[si] = status;
-      if (!slot.memos) slot.memos = {};
-      touch('attendance', all);
-      group.querySelectorAll('button').forEach(b => b.classList.toggle('on', status !== 'present' && b === btn));
+  body.querySelector('ul').addEventListener('click', ev => {
+    const btn = ev.target.closest('button');
+    const li = ev.target.closest('li.stu');
+    if (!btn || !li) return;
+    const si = Number(li.dataset.si);
+    const on = Object.fromEntries(getEntries(day, classIdx, si).map(e => [e.status, e.periods]));
+    const isStatus = !!btn.closest('.att');
+    if (isStatus){
+      // 켜진 버튼을 다시 누르면 그 출결만 끈다. 결석은 다른 출결과 함께 두지 않는다 (데스크톱과 같다)
+      const st = btn.dataset.st;
+      if (on[st]) delete on[st];
+      else if (st === 'absent'){ Object.keys(on).forEach(k => delete on[k]); on.absent = [...choices]; }
+      else { delete on.absent; on[st] = []; }
+    } else {
+      // 교시 고르기 — 결석은 전 교시라 고르지 않는다
+      const st = btn.closest('.pers')?.dataset.st;
+      if (!on[st] || st === 'absent') return;
+      const p = btn.dataset.p;
+      if (st === 'result'){
+        on.result = on.result.includes(p) ? on.result.filter(x => x !== p) : [...on.result, p];
+        on.result.sort((x, y) => choices.indexOf(x) - choices.indexOf(y));
+      } else {
+        on[st] = expandPeriods(st, p, choices);
+      }
+    }
+    setEntries(day, classIdx, si, PERIOD_ST.filter(k => on[k]).map(k => ({ status: k, periods: on[k] })));
+    li.innerHTML = stuHtml(si);
+    if (isStatus){
       renderGrid();
       if (tab === 'roster') renderRosterTab();
-    }));
+    }
   });
 }
 
@@ -1541,8 +1667,9 @@ function renderStatsDetail(){
     if (!date.startsWith(ym)) return;
     Object.entries(classes || {}).forEach(([ci, cls]) => {
       const c = per[ci] || (per[ci] = { late:0, absent:0, early:0 });
+      // 지각하고 조퇴했으면 둘 다 센다
       Object.entries(cls || {}).forEach(([k, v]) => {
-        if (k !== 'memos' && c[v] !== undefined) c[v]++;
+        if (k !== 'memos') statusesOf(date, ci, k, v).forEach(st => { if (c[st] !== undefined) c[st]++; });
       });
     });
   });
@@ -1920,10 +2047,13 @@ function statsBody(ym, label){
     if (!date.startsWith(ym)) return;
     Object.entries(classes || {}).forEach(([ci, cls]) => {
       Object.entries(cls || {}).forEach(([si, v]) => {
-        if (si === 'memos' || count[v] === undefined) return;
-        count[v]++;
-        const key = `${ci}_${si}`;
-        (people[key] = people[key] || { ci:+ci, si:+si, absent:0, late:0, early:0, result:0 })[v]++;
+        if (si === 'memos') return;
+        // 지각하고 조퇴했으면 둘 다 센다
+        statusesOf(date, ci, si, v).forEach(st => {
+          count[st]++;
+          const key = `${ci}_${si}`;
+          (people[key] = people[key] || { ci:+ci, si:+si, absent:0, late:0, early:0, result:0 })[st]++;
+        });
       });
     });
   });
